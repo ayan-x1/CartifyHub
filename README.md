@@ -86,7 +86,3 @@ scripts/    → DB seeding, helpers
 * 📧 Email: [pathanayan8347@email.com](mailto:pathanayan8347@email.com)
 * Check docs & comments
 * Open issues for bugs or questions
-
-```
-
----
