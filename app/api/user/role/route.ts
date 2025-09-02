@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
-import { connectToDatabase } from '@/lib/mongodb';
+import { auth } from '@clerk/nextjs/server';
+import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectToDatabase();
+    await connectDB();
     
     // Find user in database
     const user = await User.findOne({ clerkId: userId });

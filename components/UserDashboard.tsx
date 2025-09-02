@@ -8,24 +8,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, ShoppingBag, User, Heart, Settings, LogOut } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Package, ShoppingBag, User, Heart, Settings, LogOut, Trash2 } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface Order {
   _id: string;
-  orderNumber: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  total: number;
   items: Array<{
-    product: {
-      name: string;
-      images: string[];
-      price: number;
-    };
+    productId: string;
+    name: string;
+    price: number; // in cents
     quantity: number;
+    image: string;
   }>;
+  subtotal: number; // in cents
+  shipping: number; // in cents
+  tax: number; // in cents
+  total: number; // in cents
+  currency: string;
+  status: 'pending' | 'paid' | 'failed' | 'fulfilled' | 'refunded';
+  stripeSessionId?: string;
+  stripePaymentIntentId?: string;
+  trackingNumber?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface UserProfile {
@@ -60,6 +75,8 @@ export function UserDashboard() {
     postalCode: '',
     country: '',
   });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -70,48 +87,19 @@ export function UserDashboard() {
 
   const fetchUserData = async () => {
     try {
-      // In a real app, fetch user orders and profile from your API
-      // For now, using mock data
-      const mockOrders: Order[] = [
-        {
-          _id: '1',
-          orderNumber: 'ORD-001',
-          status: 'delivered',
-          total: 29999,
-          items: [
-            {
-              product: {
-                name: 'Wireless Headphones',
-                images: ['/placeholder.jpg'],
-                price: 29999
-              },
-              quantity: 1
-            }
-          ],
-          createdAt: '2024-01-15'
-        },
-        {
-          _id: '2',
-          orderNumber: 'ORD-002',
-          status: 'shipped',
-          total: 8999,
-          items: [
-            {
-              product: {
-                name: 'Smart Watch',
-                images: ['/placeholder.jpg'],
-                price: 8999
-              },
-              quantity: 1
-            }
-          ],
-          createdAt: '2024-01-20'
-        }
-      ];
-
-      setOrders(mockOrders);
+      setLoading(true);
+      const response = await fetch('/api/orders');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      
+      const data = await response.json();
+      console.log('Fetched orders:', data.orders);
+      setOrders(data.orders || []);
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      console.error('Failed to fetch user orders:', error);
+      setOrders([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -200,12 +188,113 @@ export function UserDashboard() {
   const getStatusColor = (status: string) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+      paid: 'bg-blue-100 text-blue-800',
+      fulfilled: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getImageUrl = (imageUrl: string) => {
+    // Handle different image URL formats
+    if (!imageUrl) return null;
+    
+    // If it's already a full URL, return as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      console.log('Using external image URL:', imageUrl);
+      return imageUrl;
+    }
+    
+    // If it's a relative path, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const fullUrl = `${window.location.origin}${imageUrl}`;
+      console.log('Converting relative path to absolute:', fullUrl);
+      return fullUrl;
+    }
+    
+    // If it's just a filename, assume it's in the public folder
+    const publicUrl = `${window.location.origin}/${imageUrl}`;
+    console.log('Converting filename to public URL:', publicUrl);
+    return publicUrl;
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    const orderToDelete = orders.find(order => order._id === orderId);
+    const orderNumber = orderToDelete?._id.slice(-8) || 'Unknown';
+    
+    if (!confirm(`Are you sure you want to delete Order #${orderNumber}?\n\nThis action cannot be undone and will permanently remove this order from your history.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/orders?orderId=${orderId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        // Remove the order from the local state
+        setOrders(prevOrders => prevOrders.filter(order => order._id !== orderId));
+        console.log('Order deleted successfully');
+        
+        // Show success toast notification
+        toast.success(`Order #${orderNumber} has been deleted successfully! 🗑️`);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete order:', errorData);
+        
+        // Show error toast notification
+        toast.error(`Failed to delete order: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      
+      // Show error toast notification
+      toast.error('Error deleting order. Please try again.');
+    }
+  };
+
+  const confirmDeleteOrder = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+
+    const orderToDeleteData = orders.find(order => order._id === orderToDelete);
+    const orderNumber = orderToDeleteData?._id.slice(-8) || 'Unknown';
+
+    try {
+      const response = await fetch(`/api/orders?orderId=${orderToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        // Remove the order from the local state
+        setOrders(prevOrders => prevOrders.filter(order => order._id !== orderToDelete));
+        console.log('Order deleted successfully');
+        
+        // Show success toast notification
+        toast.success(`Order #${orderNumber} has been deleted successfully! 🗑️`);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete order:', errorData);
+        
+        // Show error toast notification
+        toast.error(`Failed to delete order: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      
+      // Show error toast notification
+      toast.error('Error deleting order. Please try again.');
+    } finally {
+      setShowDeleteConfirm(false);
+      setOrderToDelete(null);
+    }
   };
 
   const handleSignOut = async () => {
@@ -277,7 +366,7 @@ export function UserDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {orders.filter(order => ['pending', 'processing', 'shipped'].includes(order.status)).length}
+                {orders.filter(order => ['pending', 'paid'].includes(order.status)).length}
               </div>
               <p className="text-xs text-muted-foreground">Currently processing</p>
             </CardContent>
@@ -315,28 +404,70 @@ export function UserDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orders.slice(0, 3).map((order) => (
-                    <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <img
-                          src={order.items[0].product.images[0] || '/placeholder.jpg'}
-                          alt={order.items[0].product.name}
-                          className="w-12 h-12 object-cover rounded-md"
-                        />
-                        <div>
-                          <h4 className="font-medium">{order.items[0].product.name}</h4>
-                          <p className="text-sm text-gray-600">Order #{order.orderNumber}</p>
-                          <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
+                  {orders.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
+                      <p className="text-gray-600 mb-4">Start shopping to see your order history here</p>
+                      <Button onClick={() => router.push('/products')}>
+                        Browse Products
+                      </Button>
+                    </div>
+                  ) : (
+                    orders.slice(0, 3).map((order) => (
+                      <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          {order.items[0]?.image ? (
+                            <img
+                              src={getImageUrl(order.items[0].image) || ''}
+                              alt={order.items[0].name}
+                              className="w-16 h-16 object-contain rounded-md border border-gray-200"
+                              onError={(e) => {
+                                console.warn('Image failed to load, showing fallback:', order.items[0].image);
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.nextElementSibling?.classList.remove('hidden');
+                                
+                                // Try to identify the issue
+                                if (order.items[0].image.includes('pexels.com')) {
+                                  console.warn('Pexels image failed - this might be a CORS or URL expiration issue');
+                                }
+                              }}
+                              onLoad={() => {
+                                console.log('Image loaded successfully:', order.items[0].image);
+                              }}
+                              crossOrigin="anonymous"
+                            />
+                          ) : null}
+                          <div className={`w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center ${order.items[0]?.image ? 'hidden' : ''}`}>
+                            <Package className="h-8 w-8 text-gray-400" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{order.items[0]?.name || 'Product'}</h4>
+                            <p className="text-sm text-gray-600">Order #{order._id.slice(-8)}</p>
+                            <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">{formatPrice(order.total)}</div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge className={getStatusColor(order.status)}>
+                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => confirmDeleteOrder(order._id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                              title="Delete this order"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">{formatPrice(order.total)}</div>
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -351,30 +482,71 @@ export function UserDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order._id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h4 className="font-medium">Order #{order.orderNumber}</h4>
-                          <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">{formatPrice(order.total)}</div>
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="flex items-center justify-between text-sm">
-                            <span>{item.product.name} x{item.quantity}</span>
-                            <span>{formatPrice(item.product.price * item.quantity)}</span>
-                          </div>
-                        ))}
-                      </div>
+                  {orders.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
+                      <p className="text-gray-600 mb-4">Start shopping to see your order history here</p>
+                      <Button onClick={() => router.push('/products')}>
+                        Browse Products
+                      </Button>
                     </div>
-                  ))}
+                  ) : (
+                    orders.map((order) => (
+                      <div key={order._id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h4 className="font-medium">Order #{order._id.slice(-8)}</h4>
+                            <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{formatPrice(order.total)}</div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge className={getStatusColor(order.status)}>
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => confirmDeleteOrder(order._id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                                title="Delete this order"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {order.items.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-3">
+                                {item.image ? (
+                                  <img
+                                    src={getImageUrl(item.image) || ''}
+                                    alt={item.name}
+                                    className="w-10 h-10 object-contain rounded border border-gray-200"
+                                    onError={(e) => {
+                                      console.warn('Image failed to load, showing fallback:', item.image);
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      target.nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                    crossOrigin="anonymous"
+                                  />
+                                ) : null}
+                                <div className={`w-10 h-10 bg-gray-200 rounded flex items-center justify-center ${item.image ? 'hidden' : ''}`}>
+                                  <Package className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <span>{item.name} x{item.quantity}</span>
+                              </div>
+                              <span>{formatPrice(item.price * item.quantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -507,6 +679,46 @@ export function UserDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-red-600" />
+                Delete Order
+              </DialogTitle>
+              <DialogDescription>
+                {orderToDelete && (
+                  <>
+                    Are you sure you want to delete <strong>Order #{orders.find(o => o._id === orderToDelete)?._id.slice(-8)}</strong>?
+                    <br /><br />
+                    This action cannot be undone and will permanently remove this order from your history.
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setOrderToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteOrder}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Order
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

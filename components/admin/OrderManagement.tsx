@@ -6,7 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Eye, Package, Truck, CheckCircle, XCircle } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import { Search, Eye, Package, Truck, CheckCircle, XCircle, Calendar, User, CreditCard, MapPin } from 'lucide-react';
 import { IOrder } from '@/models/Order';
 import { Types } from 'mongoose';
 
@@ -31,6 +38,8 @@ export function OrderManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -62,6 +71,16 @@ export function OrderManagement() {
     } catch (error) {
       console.error('Failed to update order status:', error);
     }
+  };
+
+  const openOrderDetails = (order: IOrder) => {
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
+  };
+
+  const closeOrderDetails = () => {
+    setIsDetailsOpen(false);
+    setSelectedOrder(null);
   };
 
   const formatPrice = (cents: number) => {
@@ -213,7 +232,11 @@ export function OrderManagement() {
                       )}
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openOrderDetails(order)}
+                      >
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </Button>
@@ -245,6 +268,214 @@ export function OrderManagement() {
           )}
         </div>
       </CardContent>
+
+      {/* Order Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedOrder && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Order Details - #{selectedOrder._id.toString().slice(-8)}
+                </DialogTitle>
+                <DialogDescription>
+                  Complete order information and customer details
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Order Status and Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-gray-600">Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Badge className={statusColors[selectedOrder.status as keyof typeof statusColors]}>
+                        {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-gray-600">Total Amount</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{formatPrice(selectedOrder.total)}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-gray-600">Order Date</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span>{formatDate(selectedOrder.createdAt.toString())}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Customer Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      Customer Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Customer ID:</span>
+                        <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                          {selectedOrder.userId}
+                        </code>
+                      </div>
+                      {selectedOrder.trackingNumber && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Tracking Number:</span>
+                          <code className="bg-blue-100 px-2 py-1 rounded text-sm">
+                            {selectedOrder.trackingNumber}
+                          </code>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Order Items */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Order Items</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {selectedOrder.items.map((item, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-4">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-16 h-16 object-cover rounded-lg"
+                            />
+                            <div>
+                              <h4 className="font-medium text-lg">{item.name}</h4>
+                              <p className="text-gray-600">Quantity: {item.quantity}</p>
+                              <p className="text-gray-600">Price per item: {formatPrice(item.price)}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xl font-bold">
+                              {formatPrice(item.price * item.quantity)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Order Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Order Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Subtotal:</span>
+                        <span>{formatPrice(selectedOrder.subtotal)}</span>
+                      </div>
+                      {selectedOrder.shipping > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Shipping:</span>
+                          <span>{formatPrice(selectedOrder.shipping)}</span>
+                        </div>
+                      )}
+                      {selectedOrder.tax > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Tax:</span>
+                          <span>{formatPrice(selectedOrder.tax)}</span>
+                        </div>
+                      )}
+                      <div className="border-t pt-3">
+                        <div className="flex justify-between text-lg font-bold">
+                          <span>Total:</span>
+                          <span>{formatPrice(selectedOrder.total)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Payment Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Payment Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {selectedOrder.stripeSessionId && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Stripe Session ID:</span>
+                          <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                            {selectedOrder.stripeSessionId}
+                          </code>
+                        </div>
+                      )}
+                      {selectedOrder.stripePaymentIntentId && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Payment Intent ID:</span>
+                          <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                            {selectedOrder.stripePaymentIntentId}
+                          </code>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button variant="outline" onClick={closeOrderDetails}>
+                    Close
+                  </Button>
+                  {selectedOrder.status === 'paid' && (
+                    <Button
+                      onClick={() => {
+                        updateOrderStatus(selectedOrder._id.toString(), 'fulfilled');
+                        closeOrderDetails();
+                      }}
+                    >
+                      <Truck className="h-4 w-4 mr-2" />
+                      Mark Fulfilled
+                    </Button>
+                  )}
+                  {selectedOrder.status === 'pending' && (
+                    <Button
+                      onClick={() => {
+                        updateOrderStatus(selectedOrder._id.toString(), 'paid');
+                        closeOrderDetails();
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark Paid
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
