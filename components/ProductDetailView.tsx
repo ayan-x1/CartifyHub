@@ -13,11 +13,17 @@ import { toast } from 'sonner';
 import { Product3DViewer } from './Product3DViewer';
 
 interface ProductDetailViewProps {
-  product: IProduct;
+  product: Omit<IProduct, '_id' | 'createdAt' | 'updatedAt'> & {
+    _id: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
 }
 
 export function ProductDetailView({ product }: ProductDetailViewProps) {
   const { addItem } = useCart();
+  const inCartQuantity = useCart((state) => state.items.find((i) => i.productId === String(product._id))?.quantity || 0);
+  const stockLeft = Math.max(0, product.stock - inCartQuantity);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +45,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     setIsLoading(true);
     try {
       addItem({
-        productId: (product._id as Types.ObjectId).toString(),
+        productId: String(product._id),
         name: product.name,
         price: product.price,
         image: product.images[0] || '/placeholder.jpg',
@@ -152,9 +158,9 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
 
           {/* Stock Status */}
           <div className="text-sm">
-            {product.stock > 0 ? (
+            {stockLeft > 0 ? (
               <span className="text-green-600 font-medium">
-                ✓ In Stock ({product.stock} available)
+                ✓ In Stock ({stockLeft} available)
               </span>
             ) : (
               <span className="text-red-600 font-medium">✗ Out of Stock</span>
@@ -181,7 +187,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setQuantity(quantity + 1)}
-                  disabled={quantity >= product.stock}
+                  disabled={quantity >= stockLeft}
                 >
                   +
                 </Button>
@@ -191,12 +197,12 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             <div className="flex space-x-3">
               <Button
                 onClick={handleAddToCart}
-                disabled={isLoading || product.stock === 0}
+                disabled={isLoading || stockLeft === 0}
                 size="lg"
                 className="flex-1"
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                {isLoading ? 'Adding...' : 'Add to Cart'}
+                {isLoading ? 'Adding...' : stockLeft === 0 ? 'Out of Stock' : 'Add to Cart'}
               </Button>
               
               <Button variant="outline" size="lg">

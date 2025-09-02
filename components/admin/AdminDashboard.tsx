@@ -6,8 +6,34 @@ import { ProductManagement } from './ProductManagement';
 import { OrderManagement } from './OrderManagement';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { Package, ShoppingBag, TrendingUp, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export function AdminDashboard() {
+  const [stats, setStats] = useState<{ revenue: number; orders: number; products: number; customers: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/admin/analytics?range=30d');
+        const data = await res.json();
+        setStats({
+          revenue: data.revenue || 0,
+          orders: data.orders || 0,
+          products: data.products || 0,
+          customers: data.customers || 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num);
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -23,8 +49,8 @@ export function AdminDashboard() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$12,345</div>
-              <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatCurrency(stats.revenue)}</div>
+              <p className="text-xs text-muted-foreground">Last 30 days</p>
             </CardContent>
           </Card>
           
@@ -34,8 +60,8 @@ export function AdminDashboard() {
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+573</div>
-              <p className="text-xs text-muted-foreground">+201 since last week</p>
+              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatNumber(stats.orders)}</div>
+              <p className="text-xs text-muted-foreground">Last 30 days</p>
             </CardContent>
           </Card>
           
@@ -45,8 +71,8 @@ export function AdminDashboard() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">127</div>
-              <p className="text-xs text-muted-foreground">+12 this month</p>
+              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatNumber(stats.products)}</div>
+              <p className="text-xs text-muted-foreground">Catalog size</p>
             </CardContent>
           </Card>
           
@@ -56,8 +82,8 @@ export function AdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2,350</div>
-              <p className="text-xs text-muted-foreground">+180 this month</p>
+              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatNumber(stats.customers)}</div>
+              <p className="text-xs text-muted-foreground">All customers</p>
             </CardContent>
           </Card>
         </div>

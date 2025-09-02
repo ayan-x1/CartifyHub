@@ -8,18 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users, Package } from 'lucide-react';
 
 // Dynamic imports for charts to avoid SSR issues
-const LineChart = dynamic(() => import('recharts').then((mod) => mod.LineChart), { ssr: false });
-const Line = dynamic(() => import('recharts').then((mod) => mod.Line), { ssr: false });
-const XAxis = dynamic(() => import('recharts').then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then((mod) => mod.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import('recharts').then((mod) => mod.CartesianGrid), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then((mod) => mod.Tooltip), { ssr: false });
-const ResponsiveContainer = dynamic(() => import('recharts').then((mod) => mod.ResponsiveContainer), { ssr: false });
-const BarChart = dynamic(() => import('recharts').then((mod) => mod.BarChart), { ssr: false });
-const Bar = dynamic(() => import('recharts').then((mod) => mod.Bar), { ssr: false });
-const PieChart = dynamic(() => import('recharts').then((mod) => mod.PieChart), { ssr: false });
-const Pie = dynamic(() => import('recharts').then((mod) => mod.Pie), { ssr: false });
-const Cell = dynamic(() => import('recharts').then((mod) => mod.Cell), { ssr: false });
+const LineChart = dynamic<any>(() => import('recharts').then((mod) => mod.LineChart as any), { ssr: false });
+const Line = dynamic<any>(() => import('recharts').then((mod) => mod.Line as any), { ssr: false });
+const XAxis = dynamic<any>(() => import('recharts').then((mod) => mod.XAxis as any), { ssr: false });
+const YAxis = dynamic<any>(() => import('recharts').then((mod) => mod.YAxis as any), { ssr: false });
+const CartesianGrid = dynamic<any>(() => import('recharts').then((mod) => mod.CartesianGrid as any), { ssr: false });
+const Tooltip = dynamic<any>(() => import('recharts').then((mod) => mod.Tooltip as any), { ssr: false });
+const ResponsiveContainer = dynamic<any>(() => import('recharts').then((mod) => mod.ResponsiveContainer as any), { ssr: false });
+const BarChart = dynamic<any>(() => import('recharts').then((mod) => mod.BarChart as any), { ssr: false });
+const Bar = dynamic<any>(() => import('recharts').then((mod) => mod.Bar as any), { ssr: false });
+const PieChart = dynamic<any>(() => import('recharts').then((mod) => mod.PieChart as any), { ssr: false });
+const Pie = dynamic<any>(() => import('recharts').then((mod) => mod.Pie as any), { ssr: false });
+const Cell = dynamic<any>(() => import('recharts').then((mod) => mod.Cell as any), { ssr: false });
 
 interface AnalyticsData {
   revenue: number;
@@ -49,43 +49,9 @@ export function AnalyticsDashboard() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      // In a real app, this would fetch from your analytics API
-      // For now, we'll use mock data
-      const mockData: AnalyticsData = {
-        revenue: 45678,
-        orders: 234,
-        customers: 189,
-        products: 127,
-        revenueChange: 12.5,
-        ordersChange: 8.2,
-        customersChange: 15.7,
-        productsChange: 3.1,
-        revenueData: [
-          { date: 'Jan 1', revenue: 1200 },
-          { date: 'Jan 2', revenue: 1800 },
-          { date: 'Jan 3', revenue: 1400 },
-          { date: 'Jan 4', revenue: 2200 },
-          { date: 'Jan 5', revenue: 1900 },
-          { date: 'Jan 6', revenue: 2500 },
-          { date: 'Jan 7', revenue: 2100 },
-        ],
-        topProducts: [
-          { name: 'Wireless Headphones', sold: 45 },
-          { name: 'Smart Watch', sold: 38 },
-          { name: 'Gaming Keyboard', sold: 32 },
-          { name: 'Office Chair', sold: 28 },
-          { name: 'Laptop Stand', sold: 25 },
-        ],
-        categoryDistribution: [
-          { category: 'Electronics', count: 45 },
-          { category: 'Furniture', count: 28 },
-          { category: 'Fashion', count: 22 },
-          { category: 'Sports', count: 18 },
-          { category: 'Books', count: 14 },
-        ],
-      };
-      
-      setAnalytics(mockData);
+      const response = await fetch(`/api/admin/analytics?range=${timeRange}`);
+      const data = await response.json();
+      setAnalytics(data as AnalyticsData);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
     } finally {
@@ -231,8 +197,8 @@ export function AnalyticsDashboard() {
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value) => [formatCurrency(Number(value)), 'Revenue']}
-                      labelFormatter={(label) => `Date: ${label}`}
+                      formatter={(value: unknown) => [formatCurrency(Number(value)), 'Revenue']}
+                      labelFormatter={(label: unknown) => `Date: ${String(label)}`}
                     />
                     <Line 
                       type="monotone" 
@@ -266,7 +232,7 @@ export function AnalyticsDashboard() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [value, 'Units Sold']} />
+                    <Tooltip formatter={(value: unknown) => [value as string | number, 'Units Sold']} />
                     <Bar dataKey="sold" fill="#10b981" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -296,7 +262,7 @@ export function AnalyticsDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
+                    label={({ category, percent }: { category: string; percent: number }) => `${category} ${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
@@ -305,7 +271,7 @@ export function AnalyticsDashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [value, 'Products']} />
+                  <Tooltip formatter={(value: unknown) => [value as string | number, 'Products']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

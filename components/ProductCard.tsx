@@ -1,22 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Star, Eye } from 'lucide-react';
+import { ShoppingCart, Star, Heart } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { IProduct } from '@/models/Product';
 import { toast } from 'sonner';
+import { useUser } from '@clerk/nextjs';
 
 interface ProductCardProps {
   product: IProduct;
+  priority?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addItem } = useCart();
+  const inCartQuantity = useCart((state) => state.items.find((i) => i.productId === String(product._id))?.quantity || 0);
+  const stockLeft = Math.max(0, product.stock - inCartQuantity);
   const [isLoading, setIsLoading] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { isSignedIn } = useUser();
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -29,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsLoading(true);
     try {
       addItem({
-        productId: product._id,
+        productId: String(product._id),
         name: product.name,
         price: product.price,
         image: product.images[0] || '/placeholder.jpg',
@@ -43,16 +49,53 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/user/wishlist');
+        if (res.ok) {
+          const data = await res.json();
+          const id = String((product as any)._id);
+          setIsWishlisted((data.wishlist || []).some((w: string) => String(w) === id));
+        }
+      } catch {}
+    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product && (product as any)._id]);
+
+  const toggleWishlist = async () => {
+    if (!isSignedIn) {
+      toast.info('Please sign in to manage wishlist');
+      return;
+    }
+    const id = String((product as any)._id);
+    try {
+      if (isWishlisted) {
+        await fetch('/api/user/wishlist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: id }) });
+        setIsWishlisted(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await fetch('/api/user/wishlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: id }) });
+        setIsWishlisted(true);
+        toast.success('Added to wishlist');
+      }
+    } catch {
+      toast.error('Failed to update wishlist');
+    }
+  };
+
   return (
     <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden">
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
-        <Link href={`/products/${product.slug}`}>
+        <Link href={`/products/${product.slug}`} className="relative block h-full w-full">
           <Image
             src={product.images[0] || '/placeholder.jpg'}
             alt={product.name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
+            priority={priority}
           />
         </Link>
         
@@ -63,16 +106,14 @@ export function ProductCard({ product }: ProductCardProps) {
           </Badge>
         )}
         
-        {/* Quick View Button */}
-        <Link href={`/products/${product.slug}`}>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-        </Link>
+        {/* Wishlist Button */}
+        <button
+          onClick={toggleWishlist}
+          className="absolute top-2 right-2 p-2 rounded-md bg-white/80 hover:bg-white transition-opacity opacity-0 group-hover:opacity-100"
+          aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart className={`h-4 w-4 ${isWishlisted ? 'text-red-500 fill-current' : 'text-gray-700'}`} />
+        </button>
       </div>
 
       {/* Product Info */}
@@ -132,8 +173,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Stock Status */}
         <div className="text-sm text-gray-500">
-          {product.stock > 0 ? (
-            <span className="text-green-600">In Stock ({product.stock})</span>
+          {stockLeft > 0 ? (
+            <span className="text-green-600">In Stock ({stockLeft})</span>
           ) : (
             <span className="text-red-600">Out of Stock</span>
           )}
@@ -142,11 +183,11 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Add to Cart Button */}
         <Button
           onClick={handleAddToCart}
-          disabled={isLoading || product.stock === 0}
+          disabled={isLoading || stockLeft === 0}
           className="w-full group-hover:bg-blue-600 transition-colors"
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
-          {isLoading ? 'Adding...' : product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+          {isLoading ? 'Adding...' : stockLeft > 0 ? 'Add to Cart' : 'Out of Stock'}
         </Button>
       </div>
     </div>

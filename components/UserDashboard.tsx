@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Package, ShoppingBag, User, Heart, Settings, LogOut } from 'lucide-react';
@@ -40,10 +42,29 @@ export function UserDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showWishlist, setShowWishlist] = useState(false);
+  const [showAddresses, setShowAddresses] = useState(false);
+  const [name, setName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [newAddress, setNewAddress] = useState({
+    fullName: '',
+    phone: '',
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+  });
 
   useEffect(() => {
     if (user) {
       fetchUserData();
+      fetchProfile();
     }
   }, [user]);
 
@@ -94,6 +115,71 @@ export function UserDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      setProfileLoading(true);
+      const res = await fetch('/api/user/profile');
+      if (res.ok) {
+        const data = await res.json();
+        setName(data.name || '');
+        setAvatarUrl(data.avatarUrl || '');
+        setWishlist(data.wishlist || []);
+        setAddresses(data.addresses || []);
+      }
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const saveProfile = async () => {
+    const res = await fetch('/api/user/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, avatarUrl }),
+    });
+    if (!res.ok) console.error('Failed to update profile');
+  };
+
+  const removeFromWishlist = async (productId: string) => {
+    await fetch('/api/user/wishlist', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId }),
+    });
+    setWishlist((prev) => prev.filter((id) => id !== productId));
+  };
+
+  const addAddress = async () => {
+    const res = await fetch('/api/user/addresses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAddress),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setAddresses(data.addresses || []);
+      setNewAddress({ fullName: '', phone: '', line1: '', line2: '', city: '', state: '', postalCode: '', country: '' });
+    }
+  };
+
+  const deleteAddress = async (addressId: string) => {
+    await fetch('/api/user/addresses', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ addressId }),
+    });
+    setAddresses((prev) => prev.filter((a) => String(a._id) !== String(addressId)));
+  };
+
+  const setDefaultAddress = async (addressId: string) => {
+    await fetch('/api/user/addresses', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ addressId, setDefault: true }),
+    });
+    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: String(a._id) === String(addressId) })));
   };
 
   const formatPrice = (cents: number) => {
@@ -313,7 +399,7 @@ export function UserDashboard() {
                     <div>
                       <h3 className="text-lg font-medium">{user?.fullName || 'User'}</h3>
                       <p className="text-gray-600">{user?.emailAddresses[0]?.emailAddress}</p>
-                      <p className="text-sm text-gray-500">Member since {formatDate(user?.createdAt || new Date().toISOString())}</p>
+                      <p className="text-sm text-gray-500">Member since {formatDate(new Date(user?.createdAt ?? Date.now()).toISOString())}</p>
                     </div>
                   </div>
                 </div>
@@ -330,18 +416,92 @@ export function UserDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => setShowEditProfile((s) => !s)}>
                     <Settings className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  {showEditProfile && (
+                    <div className="border rounded-lg p-4 space-y-4">
+                      {profileLoading ? (
+                        <p className="text-sm text-gray-500">Loading...</p>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="name">Name</Label>
+                              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                            </div>
+                            <div>
+                              <Label htmlFor="avatar">Avatar URL</Label>
+                              <Input id="avatar" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
+                            </div>
+                          </div>
+                          <Button onClick={saveProfile}>Save Changes</Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <Button variant="outline" className="w-full justify-start" onClick={() => setShowWishlist((s) => !s)}>
                     <Heart className="h-4 w-4 mr-2" />
                     Wishlist
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  {showWishlist && (
+                    <div className="border rounded-lg p-4 space-y-3">
+                      {wishlist.length === 0 && <p className="text-sm text-gray-500">No items yet.</p>}
+                      {wishlist.map((id) => (
+                        <div key={id} className="flex items-center justify-between text-sm">
+                          <span>Product ID: {id}</span>
+                          <div className="space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/products/${id}`)}>View</Button>
+                            <Button variant="destructive" size="sm" onClick={() => removeFromWishlist(id)}>Remove</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Button variant="outline" className="w-full justify-start" onClick={() => setShowAddresses((s) => !s)}>
                     <Package className="h-4 w-4 mr-2" />
                     Shipping Addresses
                   </Button>
+                  {showAddresses && (
+                    <div className="border rounded-lg p-4 space-y-6">
+                      <div className="space-y-3">
+                        {addresses.length === 0 && <p className="text-sm text-gray-500">No addresses yet.</p>}
+                        {addresses.map((addr) => (
+                          <div key={String(addr._id)} className="border rounded-md p-3 text-sm">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{addr.fullName} {addr.isDefault && <span className="ml-2 text-xs text-green-600">Default</span>}</div>
+                                <div className="text-gray-600">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</div>
+                                <div className="text-gray-600">{addr.city}, {addr.state} {addr.postalCode}, {addr.country}</div>
+                                <div className="text-gray-600">{addr.phone}</div>
+                              </div>
+                              <div className="space-x-2">
+                                {!addr.isDefault && (
+                                  <Button variant="outline" size="sm" onClick={() => setDefaultAddress(String(addr._id))}>Set Default</Button>
+                                )}
+                                <Button variant="destructive" size="sm" onClick={() => deleteAddress(String(addr._id))}>Delete</Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        <h4 className="font-medium">Add New Address</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input placeholder="Full Name" value={newAddress.fullName} onChange={(e) => setNewAddress({ ...newAddress, fullName: e.target.value })} />
+                          <Input placeholder="Phone" value={newAddress.phone} onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })} />
+                          <Input placeholder="Address Line 1" value={newAddress.line1} onChange={(e) => setNewAddress({ ...newAddress, line1: e.target.value })} />
+                          <Input placeholder="Address Line 2 (optional)" value={newAddress.line2} onChange={(e) => setNewAddress({ ...newAddress, line2: e.target.value })} />
+                          <Input placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} />
+                          <Input placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} />
+                          <Input placeholder="Postal Code" value={newAddress.postalCode} onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })} />
+                          <Input placeholder="Country" value={newAddress.country} onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })} />
+                        </div>
+                        <Button onClick={addAddress}>Add Address</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

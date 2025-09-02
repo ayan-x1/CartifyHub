@@ -17,10 +17,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  const serializedProduct = {
+    ...product,
+    _id: String((product as any)._id),
+    createdAt: (product as any).createdAt instanceof Date
+      ? (product as any).createdAt.toISOString()
+      : (product as any).createdAt,
+    updatedAt: (product as any).updatedAt instanceof Date
+      ? (product as any).updatedAt.toISOString()
+      : (product as any).updatedAt,
+  } as any;
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
-      <ProductDetailView product={product} />
+      <ProductDetailView product={serializedProduct} />
     </div>
   );
 }
