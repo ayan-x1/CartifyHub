@@ -5,6 +5,15 @@ export interface IUser extends Document {
   email: string;
   name?: string;
   avatarUrl?: string;
+  phone?: string;
+  dateOfBirth?: Date;
+  basicAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
   isAdmin: boolean;
   wishlist: mongoose.Types.ObjectId[];
   addresses: Array<{
@@ -38,11 +47,22 @@ const AddressSchema = new Schema(
   { _id: true, timestamps: false }
 );
 
+const BasicAddressSchema = new Schema({
+  street: { type: String, required: true },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  postalCode: { type: String, required: true },
+  country: { type: String, required: true },
+}, { _id: false });
+
 const UserSchema = new Schema<IUser>({
   clerkId: { type: String, required: true, unique: true },
   email: { type: String, required: true },
   name: { type: String },
   avatarUrl: { type: String },
+  phone: { type: String },
+  dateOfBirth: { type: Date },
+  basicAddress: { type: BasicAddressSchema },
   isAdmin: { type: Boolean, default: false },
   wishlist: [{ type: Schema.Types.ObjectId, ref: 'Product', default: [] }],
   addresses: { type: [AddressSchema], default: [] },

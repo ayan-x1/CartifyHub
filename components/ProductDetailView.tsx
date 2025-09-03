@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { IProduct } from '@/models/Product';
 import { Types } from 'mongoose';
 import { toast } from 'sonner';
 import { Product3DViewer } from './Product3DViewer';
+import { useUser } from '@clerk/nextjs';
 
 interface ProductDetailViewProps {
   product: Omit<IProduct, '_id' | 'createdAt' | 'updatedAt'> & {
@@ -22,12 +23,14 @@ interface ProductDetailViewProps {
 
 export function ProductDetailView({ product }: ProductDetailViewProps) {
   const { addItem } = useCart();
+  const { isSignedIn } = useUser();
   const inCartQuantity = useCart((state) => state.items.find((i) => i.productId === String(product._id))?.quantity || 0);
   const stockLeft = Math.max(0, product.stock - inCartQuantity);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -56,6 +59,56 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
       toast.error('Failed to add item to cart');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Check if product is in wishlist
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!isSignedIn) return;
+      
+      try {
+        const res = await fetch('/api/user/wishlist');
+        if (res.ok) {
+          const data = await res.json();
+          const id = String(product._id);
+          setIsWishlisted((data.wishlist || []).some((w: string) => String(w) === id));
+        }
+      } catch (error) {
+        console.error('Failed to check wishlist status:', error);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [isSignedIn, product._id]);
+
+  const toggleWishlist = async () => {
+    if (!isSignedIn) {
+      toast.info('Please sign in to manage wishlist');
+      return;
+    }
+
+    const id = String(product._id);
+    try {
+      if (isWishlisted) {
+        await fetch('/api/user/wishlist', { 
+          method: 'DELETE', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ productId: id }) 
+        });
+        setIsWishlisted(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await fetch('/api/user/wishlist', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ productId: id }) 
+        });
+        setIsWishlisted(true);
+        toast.success('Added to wishlist');
+      }
+    } catch (error) {
+      toast.error('Failed to update wishlist');
     }
   };
 
@@ -205,8 +258,13 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 {isLoading ? 'Adding...' : stockLeft === 0 ? 'Out of Stock' : 'Add to Cart'}
               </Button>
               
-              <Button variant="outline" size="lg">
-                <Heart className="h-5 w-5" />
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={toggleWishlist}
+                className={isWishlisted ? 'text-red-500 border-red-500 hover:bg-red-50' : ''}
+              >
+                <Heart className={`h-5 w-5 ${isWishlisted ? 'text-red-500 fill-current' : ''}`} />
               </Button>
               
               <Button variant="outline" size="lg">

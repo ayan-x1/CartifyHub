@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Package, ShoppingBag, User, Heart, Settings, LogOut, Trash2 } from 'lucide-react';
+import { Package, ShoppingBag, User, Heart, Settings, LogOut, Trash2, Upload, Camera, Star } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -47,6 +47,15 @@ interface UserProfile {
   name: string;
   email: string;
   avatarUrl?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  basicAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
   joinDate: string;
 }
 
@@ -54,16 +63,28 @@ export function UserDashboard() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showAddresses, setShowAddresses] = useState(false);
   const [name, setName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [phone, setPhone] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [basicAddress, setBasicAddress] = useState({
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+  });
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [wishlistProducts, setWishlistProducts] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [newAddress, setNewAddress] = useState({
     fullName: '',
@@ -82,6 +103,7 @@ export function UserDashboard() {
     if (user) {
       fetchUserData();
       fetchProfile();
+      fetchWishlist();
     }
   }, [user]);
 
@@ -113,6 +135,15 @@ export function UserDashboard() {
         const data = await res.json();
         setName(data.name || '');
         setAvatarUrl(data.avatarUrl || '');
+        setPhone(data.phone || '');
+        setDateOfBirth(data.dateOfBirth || '');
+        setBasicAddress(data.basicAddress || {
+          street: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: '',
+        });
         setWishlist(data.wishlist || []);
         setAddresses(data.addresses || []);
       }
@@ -121,22 +152,124 @@ export function UserDashboard() {
     }
   };
 
+  const fetchWishlist = async () => {
+    try {
+      const res = await fetch('/api/user/wishlist');
+      if (res.ok) {
+        const data = await res.json();
+        setWishlist(data.wishlist || []);
+        setWishlistProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch wishlist:', error);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setImageUploading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/user/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAvatarUrl(data.avatarUrl);
+        toast.success('Profile image uploaded successfully!');
+      } else {
+        const errorData = await response.json();
+        toast.error(`Failed to upload image: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image. Please try again.');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   const saveProfile = async () => {
-    const res = await fetch('/api/user/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, avatarUrl }),
-    });
-    if (!res.ok) console.error('Failed to update profile');
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name, 
+          avatarUrl, 
+          phone, 
+          dateOfBirth,
+          basicAddress: Object.values(basicAddress).some(val => val) ? basicAddress : null
+        }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        // Update local state with the response data
+        setName(data.name || '');
+        setAvatarUrl(data.avatarUrl || '');
+        setPhone(data.phone || '');
+        setDateOfBirth(data.dateOfBirth || '');
+        setBasicAddress(data.basicAddress || {
+          street: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: '',
+        });
+        
+        // Show success toast
+        toast.success('Profile updated successfully!');
+        
+        // Close the edit profile section
+        setShowEditProfile(false);
+      } else {
+        const errorData = await res.json();
+        toast.error(`Failed to update profile: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      toast.error('Failed to update profile. Please try again.');
+    }
+  };
+
+  // Helper function to get the display name
+  const getDisplayName = () => {
+    return name || user?.fullName || user?.firstName || 'User';
+  };
+
+  // Helper function to get the display avatar
+  const getDisplayAvatar = () => {
+    return avatarUrl || user?.imageUrl || '';
+  };
+
+  // Helper function to get the avatar fallback
+  const getAvatarFallback = () => {
+    if (name) {
+      return name.charAt(0).toUpperCase();
+    }
+    return user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress.charAt(0) || 'U';
   };
 
   const removeFromWishlist = async (productId: string) => {
-    await fetch('/api/user/wishlist', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId }),
-    });
-    setWishlist((prev) => prev.filter((id) => id !== productId));
+    try {
+      await fetch('/api/user/wishlist', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      });
+      setWishlist((prev) => prev.filter((id) => id !== productId));
+      setWishlistProducts((prev) => prev.filter((product) => String(product._id) !== String(productId)));
+      toast.success('Removed from wishlist');
+    } catch (error) {
+      toast.error('Failed to remove from wishlist');
+    }
   };
 
   const addAddress = async () => {
@@ -321,14 +454,14 @@ export function UserDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={user?.imageUrl} alt={user?.fullName || 'User'} />
+                <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
                 <AvatarFallback className="text-lg">
-                  {user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress.charAt(0) || 'U'}
+                  {getAvatarFallback()}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  Welcome back, {user?.firstName || 'User'}!
+                  Welcome back, {getDisplayName()}!
                 </h1>
                 <p className="text-gray-600">Manage your account and view your orders</p>
               </div>
@@ -557,21 +690,207 @@ export function UserDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Your account details and preferences</CardDescription>
+                <CardDescription>Your complete account details and preferences</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Profile Image and Basic Info */}
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={user?.imageUrl} alt={user?.fullName || 'User'} />
+                      <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
                       <AvatarFallback className="text-2xl">
-                        {user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress.charAt(0) || 'U'}
+                        {getAvatarFallback()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-medium">{user?.fullName || 'User'}</h3>
+                      <h3 className="text-lg font-medium">{getDisplayName()}</h3>
                       <p className="text-gray-600">{user?.emailAddresses[0]?.emailAddress}</p>
                       <p className="text-sm text-gray-500">Member since {formatDate(new Date(user?.createdAt ?? Date.now()).toISOString())}</p>
+                    </div>
+                  </div>
+
+                  {/* Personal Information Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 text-gray-900">Personal Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Full Name</Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {name || user?.fullName || 'Not provided'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Email Address</Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {user?.emailAddresses[0]?.emailAddress || 'Not provided'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {phone || 'Not provided'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Date of Birth</Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {dateOfBirth ? formatDate(dateOfBirth) : 'Not provided'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Basic Address Section */}
+                  {basicAddress && Object.values(basicAddress).some(val => val) && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-3 text-gray-900">Basic Address</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Street Address</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {basicAddress.street || 'Not provided'}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">City</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {basicAddress.city || 'Not provided'}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">State/Province</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {basicAddress.state || 'Not provided'}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Postal Code</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {basicAddress.postalCode || 'Not provided'}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Country</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {basicAddress.country || 'Not provided'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Account Statistics Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 text-gray-900">Account Statistics</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <Label className="text-sm font-medium text-gray-700">Total Orders</Label>
+                        <p className="text-lg font-semibold text-gray-900 mt-1">{orders.length}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <Label className="text-sm font-medium text-gray-700">Total Spent</Label>
+                        <p className="text-lg font-semibold text-gray-900 mt-1">
+                          {formatPrice(orders.reduce((sum, order) => sum + order.total, 0))}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <Label className="text-sm font-medium text-gray-700">Wishlist Items</Label>
+                        <p className="text-lg font-semibold text-gray-900 mt-1">{wishlist.length}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Shipping Addresses Section */}
+                  {addresses.length > 0 && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-3 text-gray-900">Shipping Addresses ({addresses.length})</h4>
+                      <div className="space-y-3">
+                        {addresses.map((addr, index) => (
+                          <div key={String(addr._id)} className="bg-gray-50 p-3 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                Address {index + 1}
+                                {addr.isDefault && (
+                                  <Badge variant="secondary" className="ml-2 text-xs">
+                                    Default
+                                  </Badge>
+                                )}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <p className="font-medium">{addr.fullName}</p>
+                              <p>{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
+                              <p>{addr.city}, {addr.state} {addr.postalCode}</p>
+                              <p>{addr.country}</p>
+                              <p className="mt-1">{addr.phone}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Account Details Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 text-gray-900">Account Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Account Created</Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {formatDate(new Date(user?.createdAt ?? Date.now()).toISOString())}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Last Updated</Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {formatDate(new Date(user?.updatedAt ?? Date.now()).toISOString())}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">User ID</Label>
+                        <p className="text-sm text-gray-600 mt-1 font-mono">
+                          {user?.id || 'Not available'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Account Status</Label>
+                        <div className="text-sm text-gray-600 mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            Active
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 text-gray-900">Quick Actions</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setActiveTab('orders')}
+                      >
+                        <Package className="h-4 w-4 mr-2" />
+                        View Orders
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => router.push('/wishlist')}
+                      >
+                        <Heart className="h-4 w-4 mr-2" />
+                        View Wishlist
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => router.push('/products')}
+                      >
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        Browse Products
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -593,22 +912,126 @@ export function UserDashboard() {
                     Edit Profile
                   </Button>
                   {showEditProfile && (
-                    <div className="border rounded-lg p-4 space-y-4">
+                    <div className="border rounded-lg p-4 space-y-6">
                       {profileLoading ? (
                         <p className="text-sm text-gray-500">Loading...</p>
                       ) : (
                         <>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="name">Name</Label>
-                              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
-                            </div>
-                            <div>
-                              <Label htmlFor="avatar">Avatar URL</Label>
-                              <Input id="avatar" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
+                          {/* Profile Image Upload */}
+                          <div className="space-y-4">
+                            <Label>Profile Image</Label>
+                            <div className="flex items-center space-x-4">
+                              <Avatar className="h-16 w-16">
+                                <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
+                                <AvatarFallback className="text-lg">
+                                  {getAvatarFallback()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="space-y-2">
+                                <input
+                                  ref={fileInputRef}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleImageUpload}
+                                  className="hidden"
+                                />
+                                <Button
+                                  variant="outline"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  disabled={imageUploading}
+                                  className="flex items-center space-x-2"
+                                >
+                                  {imageUploading ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                      <span>Uploading...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Camera className="h-4 w-4" />
+                                      <span>Upload Photo</span>
+                                    </>
+                                  )}
+                                </Button>
+                                <p className="text-xs text-gray-500">Max file size: 5MB. Supported formats: JPG, PNG, GIF</p>
+                              </div>
                             </div>
                           </div>
-                          <Button onClick={saveProfile}>Save Changes</Button>
+
+                          {/* Basic Information */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="name">Full Name</Label>
+                              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your full name" />
+                            </div>
+                            <div>
+                              <Label htmlFor="phone">Phone Number</Label>
+                              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter your phone number" />
+                            </div>
+                            <div>
+                              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                              <Input 
+                                id="dateOfBirth" 
+                                type="date" 
+                                value={dateOfBirth} 
+                                onChange={(e) => setDateOfBirth(e.target.value)} 
+                              />
+                            </div>
+                          </div>
+
+                          {/* Basic Address */}
+                          <div className="space-y-4">
+                            <Label>Basic Address</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="street">Street Address</Label>
+                                <Input 
+                                  id="street" 
+                                  value={basicAddress.street} 
+                                  onChange={(e) => setBasicAddress({...basicAddress, street: e.target.value})} 
+                                  placeholder="Enter street address"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="city">City</Label>
+                                <Input 
+                                  id="city" 
+                                  value={basicAddress.city} 
+                                  onChange={(e) => setBasicAddress({...basicAddress, city: e.target.value})} 
+                                  placeholder="Enter city"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="state">State/Province</Label>
+                                <Input 
+                                  id="state" 
+                                  value={basicAddress.state} 
+                                  onChange={(e) => setBasicAddress({...basicAddress, state: e.target.value})} 
+                                  placeholder="Enter state or province"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="postalCode">Postal Code</Label>
+                                <Input 
+                                  id="postalCode" 
+                                  value={basicAddress.postalCode} 
+                                  onChange={(e) => setBasicAddress({...basicAddress, postalCode: e.target.value})} 
+                                  placeholder="Enter postal code"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="country">Country</Label>
+                                <Input 
+                                  id="country" 
+                                  value={basicAddress.country} 
+                                  onChange={(e) => setBasicAddress({...basicAddress, country: e.target.value})} 
+                                  placeholder="Enter country"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <Button onClick={saveProfile} className="w-full">Save Changes</Button>
                         </>
                       )}
                     </div>
@@ -618,17 +1041,89 @@ export function UserDashboard() {
                     Wishlist
                   </Button>
                   {showWishlist && (
-                    <div className="border rounded-lg p-4 space-y-3">
-                      {wishlist.length === 0 && <p className="text-sm text-gray-500">No items yet.</p>}
-                      {wishlist.map((id) => (
-                        <div key={id} className="flex items-center justify-between text-sm">
-                          <span>Product ID: {id}</span>
-                          <div className="space-x-2">
-                            <Button variant="outline" size="sm" onClick={() => router.push(`/products/${id}`)}>View</Button>
-                            <Button variant="destructive" size="sm" onClick={() => removeFromWishlist(id)}>Remove</Button>
-                          </div>
+                    <div className="border rounded-lg p-4 space-y-4">
+                      {wishlistProducts.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">Your wishlist is empty</h3>
+                          <p className="text-gray-600 mb-4">Start adding products to your wishlist to see them here</p>
+                          <Button onClick={() => router.push('/products')}>
+                            Browse Products
+                          </Button>
                         </div>
-                      ))}
+                      ) : (
+                        <div className="space-y-4">
+                          {wishlistProducts.map((product) => (
+                            <div key={String(product._id)} className="flex items-center space-x-4 p-3 border rounded-lg">
+                              <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
+                                {product.images && product.images[0] ? (
+                                  <img
+                                    src={product.images[0]}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Package className="h-6 w-6 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  {product.discountPrice ? (
+                                    <>
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {formatPrice(product.discountPrice)}
+                                      </span>
+                                      <span className="text-sm text-gray-500 line-through">
+                                        {formatPrice(product.price)}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-sm font-medium text-gray-900">
+                                      {formatPrice(product.price)}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <div className="flex items-center">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-3 w-3 ${
+                                          i < Math.floor(product.rating || 0)
+                                            ? 'text-yellow-400 fill-current'
+                                            : 'text-gray-300'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs text-gray-500">
+                                    {product.rating || 0} ({product.reviewsCount || 0})
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => router.push(`/products/${product.slug}`)}
+                                >
+                                  View
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm" 
+                                  onClick={() => removeFromWishlist(String(product._id))}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                   <Button variant="outline" className="w-full justify-start" onClick={() => setShowAddresses((s) => !s)}>
