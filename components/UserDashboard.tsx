@@ -69,9 +69,6 @@ export function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const [showEditProfile, setShowEditProfile] = useState(false);
-  const [showWishlist, setShowWishlist] = useState(false);
-  const [showAddresses, setShowAddresses] = useState(false);
   const [name, setName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [phone, setPhone] = useState('');
@@ -226,9 +223,6 @@ export function UserDashboard() {
         
         // Show success toast
         toast.success('Profile updated successfully!');
-        
-        // Close the edit profile section
-        setShowEditProfile(false);
       } else {
         const errorData = await res.json();
         toast.error(`Failed to update profile: ${errorData.error || 'Unknown error'}`);
@@ -906,268 +900,127 @@ export function UserDashboard() {
                 <CardDescription>Manage your account preferences and security</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setShowEditProfile((s) => !s)}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                  {showEditProfile && (
-                    <div className="border rounded-lg p-4 space-y-6">
-                      {profileLoading ? (
-                        <p className="text-sm text-gray-500">Loading...</p>
-                      ) : (
-                        <>
-                          {/* Profile Image Upload */}
-                          <div className="space-y-4">
-                            <Label>Profile Image</Label>
-                            <div className="flex items-center space-x-4">
-                              <Avatar className="h-16 w-16">
-                                <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
-                                <AvatarFallback className="text-lg">
-                                  {getAvatarFallback()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="space-y-2">
-                                <input
-                                  ref={fileInputRef}
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleImageUpload}
-                                  className="hidden"
-                                />
-                                <Button
-                                  variant="outline"
-                                  onClick={() => fileInputRef.current?.click()}
-                                  disabled={imageUploading}
-                                  className="flex items-center space-x-2"
-                                >
-                                  {imageUploading ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                      <span>Uploading...</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Camera className="h-4 w-4" />
-                                      <span>Upload Photo</span>
-                                    </>
-                                  )}
-                                </Button>
-                                <p className="text-xs text-gray-500">Max file size: 5MB. Supported formats: JPG, PNG, GIF</p>
-                              </div>
-                            </div>
+                <div className="space-y-6">
+                  {profileLoading ? (
+                    <p className="text-sm text-gray-500">Loading...</p>
+                  ) : (
+                    <>
+                      {/* Profile Image Upload */}
+                      <div className="space-y-4">
+                        <Label>Profile Image</Label>
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
+                            <AvatarFallback className="text-lg">
+                              {getAvatarFallback()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="space-y-2">
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                            />
+                            <Button
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={imageUploading}
+                              className="flex items-center space-x-2"
+                            >
+                              {imageUploading ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                  <span>Uploading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Camera className="h-4 w-4" />
+                                  <span>Upload Photo</span>
+                                </>
+                              )}
+                            </Button>
+                            <p className="text-xs text-gray-500">Max file size: 5MB. Supported formats: JPG, PNG, GIF</p>
                           </div>
-
-                          {/* Basic Information */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="name">Full Name</Label>
-                              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your full name" />
-                            </div>
-                            <div>
-                              <Label htmlFor="phone">Phone Number</Label>
-                              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter your phone number" />
-                            </div>
-                            <div>
-                              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                              <Input 
-                                id="dateOfBirth" 
-                                type="date" 
-                                value={dateOfBirth} 
-                                onChange={(e) => setDateOfBirth(e.target.value)} 
-                              />
-                            </div>
-                          </div>
-
-                          {/* Basic Address */}
-                          <div className="space-y-4">
-                            <Label>Basic Address</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="street">Street Address</Label>
-                                <Input 
-                                  id="street" 
-                                  value={basicAddress.street} 
-                                  onChange={(e) => setBasicAddress({...basicAddress, street: e.target.value})} 
-                                  placeholder="Enter street address"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="city">City</Label>
-                                <Input 
-                                  id="city" 
-                                  value={basicAddress.city} 
-                                  onChange={(e) => setBasicAddress({...basicAddress, city: e.target.value})} 
-                                  placeholder="Enter city"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="state">State/Province</Label>
-                                <Input 
-                                  id="state" 
-                                  value={basicAddress.state} 
-                                  onChange={(e) => setBasicAddress({...basicAddress, state: e.target.value})} 
-                                  placeholder="Enter state or province"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="postalCode">Postal Code</Label>
-                                <Input 
-                                  id="postalCode" 
-                                  value={basicAddress.postalCode} 
-                                  onChange={(e) => setBasicAddress({...basicAddress, postalCode: e.target.value})} 
-                                  placeholder="Enter postal code"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="country">Country</Label>
-                                <Input 
-                                  id="country" 
-                                  value={basicAddress.country} 
-                                  onChange={(e) => setBasicAddress({...basicAddress, country: e.target.value})} 
-                                  placeholder="Enter country"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <Button onClick={saveProfile} className="w-full">Save Changes</Button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setShowWishlist((s) => !s)}>
-                    <Heart className="h-4 w-4 mr-2" />
-                    Wishlist
-                  </Button>
-                  {showWishlist && (
-                    <div className="border rounded-lg p-4 space-y-4">
-                      {wishlistProducts.length === 0 ? (
-                        <div className="text-center py-8">
-                          <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">Your wishlist is empty</h3>
-                          <p className="text-gray-600 mb-4">Start adding products to your wishlist to see them here</p>
-                          <Button onClick={() => router.push('/products')}>
-                            Browse Products
-                          </Button>
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {wishlistProducts.map((product) => (
-                            <div key={String(product._id)} className="flex items-center space-x-4 p-3 border rounded-lg">
-                              <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
-                                {product.images && product.images[0] ? (
-                                  <img
-                                    src={product.images[0]}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <Package className="h-6 w-6 text-gray-400" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  {product.discountPrice ? (
-                                    <>
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {formatPrice(product.discountPrice)}
-                                      </span>
-                                      <span className="text-sm text-gray-500 line-through">
-                                        {formatPrice(product.price)}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="text-sm font-medium text-gray-900">
-                                      {formatPrice(product.price)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <div className="flex items-center">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={`h-3 w-3 ${
-                                          i < Math.floor(product.rating || 0)
-                                            ? 'text-yellow-400 fill-current'
-                                            : 'text-gray-300'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <span className="text-xs text-gray-500">
-                                    {product.rating || 0} ({product.reviewsCount || 0})
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => router.push(`/products/${product.slug}`)}
-                                >
-                                  View
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm" 
-                                  onClick={() => removeFromWishlist(String(product._id))}
-                                >
-                                  Remove
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setShowAddresses((s) => !s)}>
-                    <Package className="h-4 w-4 mr-2" />
-                    Shipping Addresses
-                  </Button>
-                  {showAddresses && (
-                    <div className="border rounded-lg p-4 space-y-6">
-                      <div className="space-y-3">
-                        {addresses.length === 0 && <p className="text-sm text-gray-500">No addresses yet.</p>}
-                        {addresses.map((addr) => (
-                          <div key={String(addr._id)} className="border rounded-md p-3 text-sm">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">{addr.fullName} {addr.isDefault && <span className="ml-2 text-xs text-green-600">Default</span>}</div>
-                                <div className="text-gray-600">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</div>
-                                <div className="text-gray-600">{addr.city}, {addr.state} {addr.postalCode}, {addr.country}</div>
-                                <div className="text-gray-600">{addr.phone}</div>
-                              </div>
-                              <div className="space-x-2">
-                                {!addr.isDefault && (
-                                  <Button variant="outline" size="sm" onClick={() => setDefaultAddress(String(addr._id))}>Set Default</Button>
-                                )}
-                                <Button variant="destructive" size="sm" onClick={() => deleteAddress(String(addr._id))}>Delete</Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
                       </div>
-                      <div className="space-y-3">
-                        <h4 className="font-medium">Add New Address</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <Input placeholder="Full Name" value={newAddress.fullName} onChange={(e) => setNewAddress({ ...newAddress, fullName: e.target.value })} />
-                          <Input placeholder="Phone" value={newAddress.phone} onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })} />
-                          <Input placeholder="Address Line 1" value={newAddress.line1} onChange={(e) => setNewAddress({ ...newAddress, line1: e.target.value })} />
-                          <Input placeholder="Address Line 2 (optional)" value={newAddress.line2} onChange={(e) => setNewAddress({ ...newAddress, line2: e.target.value })} />
-                          <Input placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} />
-                          <Input placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} />
-                          <Input placeholder="Postal Code" value={newAddress.postalCode} onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })} />
-                          <Input placeholder="Country" value={newAddress.country} onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })} />
+
+                      {/* Basic Information */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="name">Full Name</Label>
+                          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your full name" />
                         </div>
-                        <Button onClick={addAddress}>Add Address</Button>
+                        <div>
+                          <Label htmlFor="phone">Phone Number</Label>
+                          <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter your phone number" />
+                        </div>
+                        <div>
+                          <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                          <Input 
+                            id="dateOfBirth" 
+                            type="date" 
+                            value={dateOfBirth} 
+                            onChange={(e) => setDateOfBirth(e.target.value)} 
+                          />
+                        </div>
                       </div>
-                    </div>
+
+                      {/* Basic Address */}
+                      <div className="space-y-4">
+                        <Label>Basic Address</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="street">Street Address</Label>
+                            <Input 
+                              id="street" 
+                              value={basicAddress.street} 
+                              onChange={(e) => setBasicAddress({...basicAddress, street: e.target.value})} 
+                              placeholder="Enter street address"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="city">City</Label>
+                            <Input 
+                              id="city" 
+                              value={basicAddress.city} 
+                              onChange={(e) => setBasicAddress({...basicAddress, city: e.target.value})} 
+                              placeholder="Enter city"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="state">State/Province</Label>
+                            <Input 
+                              id="state" 
+                              value={basicAddress.state} 
+                              onChange={(e) => setBasicAddress({...basicAddress, state: e.target.value})} 
+                              placeholder="Enter state or province"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="postalCode">Postal Code</Label>
+                            <Input 
+                              id="postalCode" 
+                              value={basicAddress.postalCode} 
+                              onChange={(e) => setBasicAddress({...basicAddress, postalCode: e.target.value})} 
+                              placeholder="Enter postal code"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="country">Country</Label>
+                            <Input 
+                              id="country" 
+                              value={basicAddress.country} 
+                              onChange={(e) => setBasicAddress({...basicAddress, country: e.target.value})} 
+                              placeholder="Enter country"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button onClick={saveProfile} className="w-full">Save Changes</Button>
+                    </>
                   )}
                 </div>
               </CardContent>
