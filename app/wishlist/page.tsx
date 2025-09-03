@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Heart, Package, Star, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Heart, Package, Star, ShoppingBag, User, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@clerk/nextjs';
 
@@ -77,148 +77,146 @@ export default function WishlistPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={goBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Wishlist</h1>
-                <p className="text-gray-600">Your favorite products</p>
-              </div>
-            </div>
-            <Button onClick={goToShop}>
-              <ShoppingBag className="h-4 w-4 mr-2" />
-              Browse Products
+      {/* Role Switcher Header - Same as Dashboard */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <User className="h-5 w-5 text-blue-600" />
+            <span className="font-medium text-gray-900">User Mode</span>
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              Customer
+            </Badge>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goBack}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Dashboard</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={goToShop}>
+              Go to Shop
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="container mx-auto px-4 py-8">
-        {wishlistProducts.length === 0 ? (
-          <div className="text-center py-16">
-            <Heart className="h-24 w-24 text-gray-400 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Your wishlist is empty</h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Start adding products to your wishlist to see them here. You can like products by clicking the heart icon on any product page.
-            </p>
-            <div className="space-x-4">
-              <Button size="lg" onClick={goToShop}>
-                <ShoppingBag className="h-5 w-5 mr-2" />
-                Browse Products
-              </Button>
-              <Button variant="outline" size="lg" onClick={goBack}>
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                Back to Dashboard
+        {/* Header with Profile - Same as Dashboard */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="h-16 w-16 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xl font-bold">
+                  {user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress.charAt(0) || 'U'}
+                </span>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  My Wishlist
+                </h1>
+                <p className="text-gray-600">Your favorite products and saved items</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button variant="outline" onClick={goToShop}>
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Shop Now
               </Button>
             </div>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Wishlist Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Heart className="h-5 w-5 mr-2 text-red-500" />
-                  Wishlist Summary
-                </CardTitle>
-                <CardDescription>
-                  You have {wishlistProducts.length} item{wishlistProducts.length !== 1 ? 's' : ''} in your wishlist
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{wishlistProducts.length}</div>
-                    <div className="text-sm text-gray-600">Total Items</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {formatPrice(wishlistProducts.reduce((sum, product) => sum + (product.discountPrice || product.price), 0))}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Value</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {wishlistProducts.filter(product => product.discountPrice).length}
-                    </div>
-                    <div className="text-sm text-gray-600">On Sale</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        </div>
 
-            {/* Wishlist Products */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {wishlistProducts.map((product) => (
-                <Card key={String(product._id)} className="group hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    {/* Product Image */}
-                    <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+        {/* Quick Stats - Same style as Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+              <Heart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{wishlistProducts.length}</div>
+              <p className="text-xs text-muted-foreground">Your wishlist items</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatPrice(wishlistProducts.reduce((sum, product) => sum + (product.discountPrice || product.price), 0))}
+              </div>
+              <p className="text-xs text-muted-foreground">Wishlist value</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">On Sale</CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {wishlistProducts.filter(product => product.discountPrice).length}
+              </div>
+              <p className="text-xs text-muted-foreground">Discounted items</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        {wishlistProducts.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Wishlist</CardTitle>
+              <CardDescription>Your favorite products and saved items</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Your wishlist is empty</h3>
+                <p className="text-gray-600 mb-4">Start adding products to your wishlist to see them here</p>
+                <Button onClick={goToShop}>
+                  Browse Products
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Wishlist</CardTitle>
+              <CardDescription>Your favorite products and saved items</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {wishlistProducts.map((product) => (
+                  <div key={String(product._id)} className="flex items-center space-x-4 p-4 border rounded-lg">
+                    <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
                       {product.images && product.images[0] ? (
                         <img
                           src={product.images[0]}
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Package className="h-12 w-12 text-gray-400" />
+                          <Package className="h-6 w-6 text-gray-400" />
                         </div>
                       )}
-                      
-                      {/* Discount Badge */}
-                      {product.discountPrice && (
-                        <Badge className="absolute top-2 right-2 bg-red-500 text-white">
-                          {Math.round(((product.price - product.discountPrice) / product.price) * 100)}% OFF
-                        </Badge>
-                      )}
-                      
-                      {/* Remove Button */}
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeFromWishlist(String(product._id))}
-                      >
-                        <Heart className="h-4 w-4" />
-                      </Button>
                     </div>
-
-                    {/* Product Info */}
-                    <div className="space-y-3">
-                      <h3 className="font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
-                      
-                      {/* Rating */}
-                      <div className="flex items-center space-x-2">
-                        <div className="flex items-center">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < Math.floor(product.rating || 0)
-                                  ? 'text-yellow-400 fill-current'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {product.rating || 0} ({product.reviewsCount || 0})
-                        </span>
-                      </div>
-
-                      {/* Price */}
-                      <div className="flex items-center space-x-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
+                      <div className="flex items-center space-x-2 mt-1">
                         {product.discountPrice ? (
                           <>
-                            <span className="text-lg font-bold text-gray-900">
+                            <span className="text-sm font-medium text-gray-900">
                               {formatPrice(product.discountPrice)}
                             </span>
                             <span className="text-sm text-gray-500 line-through">
@@ -226,55 +224,50 @@ export default function WishlistPage() {
                             </span>
                           </>
                         ) : (
-                          <span className="text-lg font-bold text-gray-900">
+                          <span className="text-sm font-medium text-gray-900">
                             {formatPrice(product.price)}
                           </span>
                         )}
                       </div>
-
-                      {/* Stock Status */}
-                      <div className="text-sm">
-                        {product.stock > 0 ? (
-                          <span className="text-green-600 font-medium">
-                            ✓ In Stock ({product.stock} available)
-                          </span>
-                        ) : (
-                          <span className="text-red-600 font-medium">✗ Out of Stock</span>
-                        )}
-                      </div>
-
-                      {/* Categories */}
-                      {product.categories && product.categories.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {product.categories.slice(0, 2).map((category: string) => (
-                            <Badge key={category} variant="outline" className="text-xs">
-                              {category}
-                            </Badge>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="flex items-center">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-3 w-3 ${
+                                i < Math.floor(product.rating || 0)
+                                  ? 'text-yellow-400 fill-current'
+                                  : 'text-gray-300'
+                              }`}
+                            />
                           ))}
                         </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="flex space-x-2 pt-2">
-                        <Button 
-                          className="flex-1" 
-                          onClick={() => router.push(`/products/${product.slug}`)}
-                        >
-                          View Details
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => removeFromWishlist(String(product._id))}
-                        >
-                          <Heart className="h-4 w-4 text-red-500 fill-current" />
-                        </Button>
+                        <span className="text-xs text-gray-500">
+                          {product.rating || 0} ({product.reviewsCount || 0})
+                        </span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => router.push(`/products/${product.slug}`)}
+                      >
+                        View
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => removeFromWishlist(String(product._id))}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
