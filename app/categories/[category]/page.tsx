@@ -3,7 +3,7 @@ import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 
 interface CategoryPageProps {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 }
 
 const CATEGORY_TITLES: Record<string, string> = {
@@ -12,8 +12,9 @@ const CATEGORY_TITLES: Record<string, string> = {
   home: 'Home & Garden',
 };
 
-export default function CategoryPage({ params }: CategoryPageProps) {
-  const { category } = params;
+export default async function CategoryPage({ params }: CategoryPageProps) {
+  // Await the params Promise
+  const { category } = await params;
   const title = CATEGORY_TITLES[category] || category.replace(/-/g, ' ');
 
   return (
@@ -32,5 +33,3 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     </div>
   );
 }
-
-

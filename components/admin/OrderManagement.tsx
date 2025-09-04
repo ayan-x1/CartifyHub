@@ -277,7 +277,7 @@ export function OrderManagement() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Order Details - #{selectedOrder._id.toString().slice(-8)}
+                  Order Details - #{(selectedOrder._id as Types.ObjectId).toString().slice(-8)}
                 </DialogTitle>
                 <DialogDescription>
                   Complete order information and customer details
@@ -451,7 +451,7 @@ export function OrderManagement() {
                   {selectedOrder.status === 'paid' && (
                     <Button
                       onClick={() => {
-                        updateOrderStatus(selectedOrder._id.toString(), 'fulfilled');
+                        updateOrderStatus((selectedOrder._id as Types.ObjectId).toString(), 'fulfilled');
                         closeOrderDetails();
                       }}
                     >
@@ -462,7 +462,7 @@ export function OrderManagement() {
                   {selectedOrder.status === 'pending' && (
                     <Button
                       onClick={() => {
-                        updateOrderStatus(selectedOrder._id.toString(), 'paid');
+                        updateOrderStatus((selectedOrder._id as Types.ObjectId).toString(), 'paid');
                         closeOrderDetails();
                       }}
                     >

@@ -5,13 +5,15 @@ import { ProductDetailView } from '@/components/ProductDetailView';
 import { Navigation } from '@/components/Navigation';
 
 interface ProductPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   await connectDB();
   
-  const product = await Product.findOne({ slug: params.slug }).lean();
+  // Await the params Promise
+  const { slug } = await params;
+  const product = await Product.findOne({ slug }).lean();
   
   if (!product) {
     notFound();

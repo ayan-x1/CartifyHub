@@ -5,7 +5,7 @@ import Order from '@/models/Order';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -16,7 +16,8 @@ export async function GET(
 
     await connectDB();
     
-    const { sessionId } = params;
+    // Await the params Promise
+    const { sessionId } = await params;
     
     const order = await Order.findOne({ 
       stripeSessionId: sessionId,

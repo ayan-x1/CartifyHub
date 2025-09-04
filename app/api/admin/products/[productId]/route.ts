@@ -6,7 +6,7 @@ import User from '@/models/User';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { productId: string } }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -23,7 +23,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { productId } = params;
+    // Await the params Promise
+    const { productId } = await params;
     const updateData = await request.json();
 
     const product = await Product.findByIdAndUpdate(
@@ -51,7 +52,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { productId: string } }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -68,7 +69,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { productId } = params;
+    // Await the params Promise
+    const { productId } = await params;
     
     const product = await Product.findByIdAndDelete(productId);
 

@@ -45,7 +45,7 @@ export const orderPaidHandler = inngest.createFunction(
           },
           $push: {
             topProducts: {
-              $each: order.items.map(item => ({
+              $each: order.items.map((item: any) => ({
                 productId: item.productId,
                 sold: item.quantity,
               }))
