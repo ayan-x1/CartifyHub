@@ -89,6 +89,10 @@
     "next-themes": {
       "react": "^19.1.1",
       "react-dom": "^19.1.1"
+    },
+    "react-day-picker": {
+      "react": "^19.1.1",
+      "react-dom": "^19.1.1"
     }
   }
 }
