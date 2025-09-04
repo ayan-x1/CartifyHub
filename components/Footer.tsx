@@ -38,7 +38,7 @@ export function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
               <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
-              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
+              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
             </ul>
           </div>
@@ -50,10 +50,6 @@ export function Footer() {
           <p className="text-gray-400 text-sm">
             © 2025 CartifyHub. All rights reserved.
           </p>
-          <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-            <span className="text-sm text-gray-400">Powered by</span>
-            <span className="text-sm font-medium">Stripe • Clerk • Three.js</span>
-          </div>
         </div>
       </div>
     </footer>

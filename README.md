@@ -50,6 +50,9 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_public_key
 STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_webh_secret_key
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
+NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
+NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
 ```
 
 ### Run

@@ -4,17 +4,27 @@ import { useEffect, useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { IProduct } from '@/models/Product';
 
-export function ProductGrid() {
+interface ProductGridProps {
+  category?: string;
+  search?: string;
+}
+
+export function ProductGrid({ category, search }: ProductGridProps) {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, search]);
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products');
+      const params = new URLSearchParams();
+      if (category) params.set('category', category);
+      if (search) params.set('search', search);
+      const query = params.toString();
+      const response = await fetch(`/api/products${query ? `?${query}` : ''}`);
       const data = await response.json();
       setProducts(data.products || []);
     } catch (error) {
