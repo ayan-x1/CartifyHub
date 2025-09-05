@@ -15,8 +15,8 @@ export function Hero() {
 
   return (
     <section className="relative bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden">
-      <div className="container mx-auto px-4 py-24 lg:py-32">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div className="container mx-auto px-4 py-16 sm:py-20 lg:py-32">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900">
@@ -42,7 +42,7 @@ export function Hero() {
                 Watch Demo
               </Button>
             </div>
-            <div className="flex items-center space-x-8 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-gray-500">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span>Secure Checkout</span>

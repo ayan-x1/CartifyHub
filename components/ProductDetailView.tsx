@@ -247,12 +247,12 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               </div>
             </div>
             
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-3">
               <Button
                 onClick={handleAddToCart}
                 disabled={isLoading || stockLeft === 0}
                 size="lg"
-                className="flex-1"
+                className="flex-1 min-w-[200px]"
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 {isLoading ? 'Adding...' : stockLeft === 0 ? 'Out of Stock' : 'Add to Cart'}

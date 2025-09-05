@@ -22,7 +22,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
   const stockLeft = Math.max(0, product.stock - inCartQuantity);
   const [isLoading, setIsLoading] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -50,19 +50,32 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
   };
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      setIsWishlisted(false);
+      return;
+    }
+    let isCancelled = false;
     const load = async () => {
       try {
         const res = await fetch('/api/user/wishlist');
-        if (res.ok) {
-          const data = await res.json();
-          const id = String((product as any)._id);
+        if (!res.ok) return;
+        const data = await res.json();
+        const id = String((product as any)._id);
+        if (!isCancelled) {
           setIsWishlisted((data.wishlist || []).some((w: string) => String(w) === id));
         }
-      } catch {}
+      } catch {
+        // ignore
+      }
     };
     load();
+    return () => {
+      isCancelled = true;
+    };
+    // Only re-run when auth state or product id changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product && (product as any)._id]);
+  }, [isLoaded, isSignedIn, (product as any)._id]);
 
   const toggleWishlist = async () => {
     if (!isSignedIn) {

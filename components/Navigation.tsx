@@ -91,7 +91,7 @@ export function Navigation() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80 sm:max-w-sm">
+              <SheetContent side="right" className="w-full sm:max-w-sm">
                 <SheetTitle className="sr-only">Main menu</SheetTitle>
                 <div className="space-y-4 mt-4">
                   <div className="relative">
@@ -102,23 +102,48 @@ export function Navigation() {
                     <Link href="/products">
                       <Button variant="outline" className="w-full">Products</Button>
                     </Link>
-                    <Link href="/dashboard">
-                      <Button variant="ghost" className="w-full">
-                        <User className="h-4 w-4 mr-2" />
-                        Dashboard
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setCartOpen(true)}
-                      className="w-full justify-start relative"
-                    >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Cart
-                      <span className="absolute right-4 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {itemCount}
-                      </span>
-                    </Button>
+                    {isLoaded && user && (
+                      <>
+                        <Link href="/dashboard">
+                          <Button variant="ghost" className="w-full">
+                            <User className="h-4 w-4 mr-2" />
+                            Dashboard
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setCartOpen(true)}
+                          className="w-full justify-start relative"
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Cart
+                          <span className="absolute right-4 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {itemCount}
+                          </span>
+                        </Button>
+                        <UserButton 
+                          appearance={{
+                            elements: {
+                              avatarBox: "h-8 w-8"
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                    {isLoaded && !user && (
+                      <>
+                        <Link href="/sign-in">
+                          <Button variant="ghost" className="w-full">
+                            Sign In
+                          </Button>
+                        </Link>
+                        <Link href="/sign-up">
+                          <Button className="w-full">
+                            Sign Up
+                          </Button>
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
               </SheetContent>
