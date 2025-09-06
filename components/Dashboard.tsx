@@ -97,29 +97,37 @@ export function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Role Switcher Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3">
-          <div className="container mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Crown className="h-5 w-5 text-yellow-600" />
-              <span className="font-medium text-gray-900">Admin Mode</span>
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                Administrator
-              </Badge>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={switchToUserDashboard}
-                className="flex items-center space-x-2"
-              >
-                <User className="h-4 w-4" />
-                <span>Switch to User View</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={goToShop}>
-                Go to Shop
-              </Button>
+        <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-3">
+          <div className="container mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 flex-shrink-0" />
+                <span className="font-medium text-gray-900 text-sm sm:text-base">Admin Mode</span>
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                  Administrator
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={switchToUserDashboard}
+                  className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                >
+                  <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">Switch to User View</span>
+                  <span className="xs:hidden">User View</span>
+                  <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={goToShop}
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                >
+                  Go to Shop
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -135,29 +143,37 @@ export function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Role Switcher Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3">
-          <div className="container mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <User className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-gray-900">User Mode</span>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                Customer
-              </Badge>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={switchToAdminDashboard}
-                className="flex items-center space-x-2"
-              >
-                <Crown className="h-4 w-4" />
-                <span>Switch to Admin View</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={goToShop}>
-                Go to Shop
-              </Button>
+        <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-3">
+          <div className="container mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                <span className="font-medium text-gray-900 text-sm sm:text-base">User Mode</span>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                  Customer
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={switchToAdminDashboard}
+                  className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                >
+                  <Crown className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">Switch to Admin View</span>
+                  <span className="xs:hidden">Admin View</span>
+                  <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={goToShop}
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                >
+                  Go to Shop
+                </Button>
+              </div>
             </div>
           </div>
         </div>

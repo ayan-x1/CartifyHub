@@ -34,77 +34,104 @@ export function AdminDashboard() {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num);
+  
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage your e-commerce platform</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
+        {/* Mobile-First Header */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Admin Dashboard</h1>
+          <p className="text-sm sm:text-base text-gray-600">Manage your e-commerce platform</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+        {/* Mobile-Responsive Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatCurrency(stats.revenue)}</div>
+              <div className="text-xl sm:text-2xl font-bold">
+                {loading || !stats ? '—' : formatCurrency(stats.revenue)}
+              </div>
               <p className="text-xs text-muted-foreground">Last 30 days</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Orders</CardTitle>
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+              <ShoppingBag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatNumber(stats.orders)}</div>
+              <div className="text-xl sm:text-2xl font-bold">
+                {loading || !stats ? '—' : formatNumber(stats.orders)}
+              </div>
               <p className="text-xs text-muted-foreground">Last 30 days</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Products</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <Package className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatNumber(stats.products)}</div>
+              <div className="text-xl sm:text-2xl font-bold">
+                {loading || !stats ? '—' : formatNumber(stats.products)}
+              </div>
               <p className="text-xs text-muted-foreground">Catalog size</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="border-0 shadow-sm sm:col-span-2 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Customers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading || !stats ? '—' : formatNumber(stats.customers)}</div>
+              <div className="text-xl sm:text-2xl font-bold">
+                {loading || !stats ? '—' : formatNumber(stats.customers)}
+              </div>
               <p className="text-xs text-muted-foreground">All customers</p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-          </TabsList>
+        {/* Mobile-Responsive Tabs */}
+        <Tabs defaultValue="analytics" className="space-y-4 sm:space-y-6">
+          {/* Horizontal Scrolling Tabs on Mobile */}
+          <div className="w-full overflow-x-auto">
+            <TabsList className="grid grid-cols-3 w-full min-w-max sm:min-w-0 h-auto p-1">
+              <TabsTrigger value="analytics" className="text-xs sm:text-sm px-2 py-2 whitespace-nowrap">
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="products" className="text-xs sm:text-sm px-2 py-2 whitespace-nowrap">
+                Products
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 py-2 whitespace-nowrap">
+                Orders
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
-          <TabsContent value="analytics" className="space-y-6">
-            <AnalyticsDashboard />
+          <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
+            <div className="w-full overflow-hidden">
+              <AnalyticsDashboard />
+            </div>
           </TabsContent>
           
-          <TabsContent value="products" className="space-y-6">
-            <ProductManagement />
+          <TabsContent value="products" className="space-y-4 sm:space-y-6">
+            <div className="w-full overflow-hidden">
+              <ProductManagement />
+            </div>
           </TabsContent>
           
-          <TabsContent value="orders" className="space-y-6">
-            <OrderManagement />
+          <TabsContent value="orders" className="space-y-4 sm:space-y-6">
+            <div className="w-full overflow-hidden">
+              <OrderManagement />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

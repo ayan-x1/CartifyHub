@@ -442,39 +442,49 @@ export function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header with Profile */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
                 <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
-                <AvatarFallback className="text-lg">
+                <AvatarFallback className="text-sm sm:text-lg">
                   {getAvatarFallback()}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
                   Welcome back, {getDisplayName()}!
                 </h1>
-                <p className="text-gray-600">Manage your account and view your orders</p>
+                <p className="text-sm sm:text-base text-gray-600">Manage your account and view your orders</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" onClick={() => router.push('/products')}>
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                Shop Now
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/products')}
+                className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2"
+              >
+                <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Shop Now</span>
+                <span className="xs:hidden">Shop</span>
               </Button>
-              <Button variant="outline" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
+              <Button 
+                variant="outline" 
+                onClick={handleSignOut}
+                className="flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2"
+              >
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Sign Out</span>
+                <span className="xs:hidden">Out</span>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -514,16 +524,27 @@ export function UserDashboard() {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          {/* Horizontal Scrolling Tabs on Mobile */}
+          <div className="w-full overflow-x-auto">
+            <TabsList className="grid grid-cols-4 w-full min-w-max sm:min-w-0 h-auto p-1">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 py-2 whitespace-nowrap">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 py-2 whitespace-nowrap">
+                Orders
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 py-2 whitespace-nowrap">
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs sm:text-sm px-2 py-2 whitespace-nowrap">
+                Settings
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Recent Orders</CardTitle>
@@ -542,54 +563,56 @@ export function UserDashboard() {
                     </div>
                   ) : (
                     orders.slice(0, 3).map((order) => (
-                      <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          {order.items[0]?.image ? (
-                            <img
-                              src={getImageUrl(order.items[0].image) || ''}
-                              alt={order.items[0].name}
-                              className="w-16 h-16 object-contain rounded-md border border-gray-200"
-                              onError={(e) => {
-                                console.warn('Image failed to load, showing fallback:', order.items[0].image);
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                target.nextElementSibling?.classList.remove('hidden');
-                                
-                                // Try to identify the issue
-                                if (order.items[0].image.includes('pexels.com')) {
-                                  console.warn('Pexels image failed - this might be a CORS or URL expiration issue');
-                                }
-                              }}
-                              onLoad={() => {
-                                console.log('Image loaded successfully:', order.items[0].image);
-                              }}
-                              crossOrigin="anonymous"
-                            />
-                          ) : null}
-                          <div className={`w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center ${order.items[0]?.image ? 'hidden' : ''}`}>
-                            <Package className="h-8 w-8 text-gray-400" />
+                      <div key={order._id} className="border rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                            {order.items[0]?.image ? (
+                              <img
+                                src={getImageUrl(order.items[0].image) || ''}
+                                alt={order.items[0].name}
+                                className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-md border border-gray-200 flex-shrink-0"
+                                onError={(e) => {
+                                  console.warn('Image failed to load, showing fallback:', order.items[0].image);
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling?.classList.remove('hidden');
+                                  
+                                  // Try to identify the issue
+                                  if (order.items[0].image.includes('pexels.com')) {
+                                    console.warn('Pexels image failed - this might be a CORS or URL expiration issue');
+                                  }
+                                }}
+                                onLoad={() => {
+                                  console.log('Image loaded successfully:', order.items[0].image);
+                                }}
+                                crossOrigin="anonymous"
+                              />
+                            ) : null}
+                            <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-md flex items-center justify-center flex-shrink-0 ${order.items[0]?.image ? 'hidden' : ''}`}>
+                              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-medium text-sm sm:text-base truncate">{order.items[0]?.name || 'Product'}</h4>
+                              <p className="text-xs sm:text-sm text-gray-600">Order #{order._id.slice(-8)}</p>
+                              <p className="text-xs sm:text-sm text-gray-600">{formatDate(order.createdAt)}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-medium">{order.items[0]?.name || 'Product'}</h4>
-                            <p className="text-sm text-gray-600">Order #{order._id.slice(-8)}</p>
-                            <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">{formatPrice(order.total)}</div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge className={getStatusColor(order.status)}>
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => confirmDeleteOrder(order._id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
-                              title="Delete this order"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          <div className="flex flex-col sm:items-end gap-2">
+                            <div className="font-medium text-sm sm:text-base">{formatPrice(order.total)}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${getStatusColor(order.status)} text-xs`}>
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => confirmDeleteOrder(order._id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 p-1 sm:p-2"
+                                title="Delete this order"
+                              >
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -601,7 +624,7 @@ export function UserDashboard() {
           </TabsContent>
           
           {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-6">
+          <TabsContent value="orders" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Order History</CardTitle>
@@ -620,39 +643,39 @@ export function UserDashboard() {
                     </div>
                   ) : (
                     orders.map((order) => (
-                      <div key={order._id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-4">
+                      <div key={order._id} className="border rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                           <div>
-                            <h4 className="font-medium">Order #{order._id.slice(-8)}</h4>
-                            <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
+                            <h4 className="font-medium text-sm sm:text-base">Order #{order._id.slice(-8)}</h4>
+                            <p className="text-xs sm:text-sm text-gray-600">{formatDate(order.createdAt)}</p>
                           </div>
-                          <div className="text-right">
-                            <div className="font-medium">{formatPrice(order.total)}</div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge className={getStatusColor(order.status)}>
+                          <div className="flex flex-col sm:items-end gap-2">
+                            <div className="font-medium text-sm sm:text-base">{formatPrice(order.total)}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${getStatusColor(order.status)} text-xs`}>
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                               </Badge>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => confirmDeleteOrder(order._id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 p-1 sm:p-2"
                                 title="Delete this order"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </div>
                         </div>
                         <div className="space-y-2">
                           {order.items.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-3">
+                            <div key={index} className="flex items-center justify-between text-xs sm:text-sm">
+                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                 {item.image ? (
                                   <img
                                     src={getImageUrl(item.image) || ''}
                                     alt={item.name}
-                                    className="w-10 h-10 object-contain rounded border border-gray-200"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded border border-gray-200 flex-shrink-0"
                                     onError={(e) => {
                                       console.warn('Image failed to load, showing fallback:', item.image);
                                       const target = e.target as HTMLImageElement;
@@ -662,12 +685,12 @@ export function UserDashboard() {
                                     crossOrigin="anonymous"
                                   />
                                 ) : null}
-                                <div className={`w-10 h-10 bg-gray-200 rounded flex items-center justify-center ${item.image ? 'hidden' : ''}`}>
-                                  <Package className="h-5 w-5 text-gray-400" />
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded flex items-center justify-center flex-shrink-0 ${item.image ? 'hidden' : ''}`}>
+                                  <Package className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                                 </div>
-                                <span>{item.name} x{item.quantity}</span>
+                                <span className="truncate">{item.name} x{item.quantity}</span>
                               </div>
-                              <span>{formatPrice(item.price * item.quantity)}</span>
+                              <span className="flex-shrink-0 ml-2">{formatPrice(item.price * item.quantity)}</span>
                             </div>
                           ))}
                         </div>
@@ -680,7 +703,7 @@ export function UserDashboard() {
           </TabsContent>
           
           {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
+          <TabsContent value="profile" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
@@ -689,17 +712,17 @@ export function UserDashboard() {
               <CardContent>
                 <div className="space-y-6">
                   {/* Profile Image and Basic Info */}
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-20 w-20">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                    <Avatar className="h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0">
                       <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
-                      <AvatarFallback className="text-2xl">
+                      <AvatarFallback className="text-lg sm:text-2xl">
                         {getAvatarFallback()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="text-lg font-medium">{getDisplayName()}</h3>
-                      <p className="text-gray-600">{user?.emailAddresses[0]?.emailAddress}</p>
-                      <p className="text-sm text-gray-500">Member since {formatDate(new Date(user?.createdAt ?? Date.now()).toISOString())}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base sm:text-lg font-medium truncate">{getDisplayName()}</h3>
+                      <p className="text-sm sm:text-base text-gray-600 truncate">{user?.emailAddresses[0]?.emailAddress}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Member since {formatDate(new Date(user?.createdAt ?? Date.now()).toISOString())}</p>
                     </div>
                   </div>
 
@@ -893,7 +916,7 @@ export function UserDashboard() {
           </TabsContent>
           
           {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
+          <TabsContent value="settings" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Account Settings</CardTitle>
@@ -908,14 +931,14 @@ export function UserDashboard() {
                       {/* Profile Image Upload */}
                       <div className="space-y-4">
                         <Label>Profile Image</Label>
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="h-16 w-16">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                          <Avatar className="h-16 w-16 flex-shrink-0">
                             <AvatarImage src={getDisplayAvatar()} alt={getDisplayName()} />
                             <AvatarFallback className="text-lg">
                               {getAvatarFallback()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="space-y-2">
+                          <div className="space-y-2 flex-1">
                             <input
                               ref={fileInputRef}
                               type="file"
@@ -927,7 +950,7 @@ export function UserDashboard() {
                               variant="outline"
                               onClick={() => fileInputRef.current?.click()}
                               disabled={imageUploading}
-                              className="flex items-center space-x-2"
+                              className="flex items-center space-x-2 w-full sm:w-auto"
                             >
                               {imageUploading ? (
                                 <>
