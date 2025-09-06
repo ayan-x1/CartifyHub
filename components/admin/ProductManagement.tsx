@@ -47,19 +47,19 @@ export function ProductManagement() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Product Management</CardTitle>
             <CardDescription>Manage your product catalog</CardDescription>
           </div>
           <Dialog open={showForm} onOpenChange={setShowForm}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
               <DialogTitle className="sr-only">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
               </DialogTitle>
@@ -101,28 +101,28 @@ export function ProductManagement() {
         ) : (
           <div className="space-y-4">
             {filteredProducts.map((product) => (
-              <div key={product._id?.toString() || product.slug} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex items-center space-x-4">
+              <div key={product._id?.toString() || product.slug} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
+                <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
                   <img
                     src={product.images[0] || '/placeholder.jpg'}
                     alt={product.name}
-                    className="w-12 h-12 object-cover rounded-md"
+                    className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-md flex-shrink-0"
                   />
-                  <div>
-                    <h4 className="font-medium">{product.name}</h4>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-medium text-sm sm:text-base truncate">{product.name}</h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
                       <span>{formatPrice(product.price)}</span>
                       {product.discountPrice && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs w-fit">
                           {formatPrice(product.discountPrice)}
                         </Badge>
                       )}
-                      <span>•</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>Stock: {product.stock}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 self-end sm:self-auto">
                   <Button
                     variant="outline"
                     size="sm"
@@ -130,11 +130,12 @@ export function ProductManagement() {
                       setEditingProduct(product);
                       setShowForm(true);
                     }}
+                    className="p-2"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                    <Trash2 className="h-4 w-4" />
+                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 p-2">
+                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>

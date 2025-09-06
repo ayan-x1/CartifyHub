@@ -19,14 +19,14 @@ export function Hero() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight text-gray-900">
                 Next-Gen
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
                   E-commerce
                 </span>
                 Experience
               </h1>
-              <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+              <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-lg">
                 Discover products like never before with our immersive 3D preview technology. 
                 Shop with confidence and style.
               </p>

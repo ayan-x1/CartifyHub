@@ -52,18 +52,18 @@ function CheckoutSuccessContent() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-8 sm:py-16">
         <div className="max-w-2xl mx-auto text-center">
           {/* Success Icon */}
-          <div className="mb-8">
-            <CheckCircle className="h-20 w-20 text-green-500 mx-auto" />
+          <div className="mb-6 sm:mb-8">
+            <CheckCircle className="h-16 w-16 sm:h-20 sm:w-20 text-green-500 mx-auto" />
           </div>
 
           {/* Success Message */}
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">
             Thank you for your order!
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8">
             Your payment has been processed successfully. We'll send you an email confirmation shortly.
           </p>
 
@@ -125,14 +125,14 @@ function CheckoutSuccessContent() {
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link href="/">
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto">
                 Continue Shopping
               </Button>
             </Link>
             <Link href="/orders">
-              <Button size="lg">
+              <Button size="lg" className="w-full sm:w-auto">
                 View My Orders
               </Button>
             </Link>

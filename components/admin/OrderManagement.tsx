@@ -136,18 +136,18 @@ export function OrderManagement() {
       </CardHeader>
       <CardContent>
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search orders by ID or product name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -173,23 +173,23 @@ export function OrderManagement() {
               const StatusIcon = statusIcons[order.status as keyof typeof statusIcons];
               
               return (
-                                 <div key={(order._id as Types.ObjectId).toString()} className="border rounded-lg p-4 space-y-4">
+                <div key={(order._id as Types.ObjectId).toString()} className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
                   {/* Order Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                       <div className="flex items-center space-x-2">
-                        <StatusIcon className="h-5 w-5 text-gray-500" />
-                        <Badge className={statusColors[order.status as keyof typeof statusColors]}>
+                        <StatusIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+                        <Badge className={`${statusColors[order.status as keyof typeof statusColors]} text-xs`}>
                           {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                         </Badge>
                       </div>
-                                             <span className="text-sm text-gray-500">
-                         Order #{(order._id as Types.ObjectId).toString().slice(-8)}
-                       </span>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        Order #{(order._id as Types.ObjectId).toString().slice(-8)}
+                      </span>
                     </div>
-                    <div className="text-right">
-                      <div className="font-semibold">{formatPrice(order.total)}</div>
-                      <div className="text-sm text-gray-500">
+                    <div className="text-left sm:text-right">
+                      <div className="font-semibold text-sm sm:text-base">{formatPrice(order.total)}</div>
+                      <div className="text-xs sm:text-sm text-gray-500">
                         {formatDate(order.createdAt.toString())}
                       </div>
                     </div>
@@ -198,22 +198,22 @@ export function OrderManagement() {
                   {/* Order Items */}
                   <div className="space-y-2">
                     {order.items.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center space-x-3">
+                      <div key={index} className="flex items-center justify-between text-xs sm:text-sm">
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                           <img
                             src={item.image}
                             alt={item.name}
-                            className="w-10 h-10 object-cover rounded"
+                            className="w-8 h-8 sm:w-10 sm:h-10 object-cover rounded flex-shrink-0"
                           />
-                          <div>
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-gray-500">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium truncate">{item.name}</div>
+                            <div className="text-gray-500 text-xs">
                               Qty: {item.quantity} × {formatPrice(item.price)}
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium">
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <div className="font-medium text-xs sm:text-sm">
                             {formatPrice(item.price * item.quantity)}
                           </div>
                         </div>
@@ -222,22 +222,23 @@ export function OrderManagement() {
                   </div>
 
                   {/* Order Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="text-sm text-gray-600">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 border-t gap-3">
+                    <div className="text-xs sm:text-sm text-gray-600">
                       <span>Customer ID: {order.userId.slice(-8)}</span>
                       {order.trackingNumber && (
-                        <span className="ml-4">
+                        <span className="block sm:inline sm:ml-4">
                           Tracking: {order.trackingNumber}
                         </span>
                       )}
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => openOrderDetails(order)}
+                        className="w-full sm:w-auto text-xs"
                       >
-                        <Eye className="h-4 w-4 mr-2" />
+                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                         View Details
                       </Button>
                       {order.status === 'paid' && (
@@ -245,8 +246,9 @@ export function OrderManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => updateOrderStatus((order._id as Types.ObjectId).toString(), 'fulfilled')}
+                          className="w-full sm:w-auto text-xs"
                         >
-                          <Truck className="h-4 w-4 mr-2" />
+                          <Truck className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Mark Fulfilled
                         </Button>
                       )}
@@ -255,8 +257,9 @@ export function OrderManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => updateOrderStatus((order._id as Types.ObjectId).toString(), 'paid')}
+                          className="w-full sm:w-auto text-xs"
                         >
-                          <CheckCircle className="h-4 w-4 mr-2" />
+                          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Mark Paid
                         </Button>
                       )}
@@ -271,7 +274,7 @@ export function OrderManagement() {
 
       {/* Order Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
           {selectedOrder && (
             <>
               <DialogHeader>
@@ -286,7 +289,7 @@ export function OrderManagement() {
 
               <div className="space-y-6">
                 {/* Order Status and Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-gray-600">Status</CardTitle>
@@ -356,21 +359,21 @@ export function OrderManagement() {
                   <CardContent>
                     <div className="space-y-4">
                       {selectedOrder.items.map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center gap-4">
+                        <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg gap-3">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                             <img
                               src={item.image}
                               alt={item.name}
-                              className="w-16 h-16 object-cover rounded-lg"
+                              className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0"
                             />
-                            <div>
-                              <h4 className="font-medium text-lg">{item.name}</h4>
-                              <p className="text-gray-600">Quantity: {item.quantity}</p>
-                              <p className="text-gray-600">Price per item: {formatPrice(item.price)}</p>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-medium text-sm sm:text-lg truncate">{item.name}</h4>
+                              <p className="text-gray-600 text-xs sm:text-sm">Quantity: {item.quantity}</p>
+                              <p className="text-gray-600 text-xs sm:text-sm">Price per item: {formatPrice(item.price)}</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold">
+                          <div className="text-left sm:text-right">
+                            <div className="text-lg sm:text-xl font-bold">
                               {formatPrice(item.price * item.quantity)}
                             </div>
                           </div>
@@ -444,8 +447,8 @@ export function OrderManagement() {
                 </Card>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button variant="outline" onClick={closeOrderDetails}>
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+                  <Button variant="outline" onClick={closeOrderDetails} className="w-full sm:w-auto">
                     Close
                   </Button>
                   {selectedOrder.status === 'paid' && (
@@ -454,6 +457,7 @@ export function OrderManagement() {
                         updateOrderStatus((selectedOrder._id as Types.ObjectId).toString(), 'fulfilled');
                         closeOrderDetails();
                       }}
+                      className="w-full sm:w-auto"
                     >
                       <Truck className="h-4 w-4 mr-2" />
                       Mark Fulfilled
@@ -465,6 +469,7 @@ export function OrderManagement() {
                         updateOrderStatus((selectedOrder._id as Types.ObjectId).toString(), 'paid');
                         closeOrderDetails();
                       }}
+                      className="w-full sm:w-auto"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Mark Paid

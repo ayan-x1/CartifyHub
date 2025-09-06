@@ -79,10 +79,10 @@ export function CheckoutForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+    <div className="max-w-4xl mx-auto px-4 sm:px-0">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Checkout</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         {/* Order Summary */}
         <Card>
           <CardHeader>
@@ -90,21 +90,21 @@ export function CheckoutForm() {
           </CardHeader>
           <CardContent className="space-y-4">
             {items.map((item) => (
-              <div key={item.productId} className="flex items-center space-x-4">
+              <div key={item.productId} className="flex items-center space-x-3 sm:space-x-4">
                 <Image
                   src={item.image}
                   alt={item.name}
-                  width={64}
-                  height={64}
-                  className="rounded-md"
+                  width={48}
+                  height={48}
+                  className="rounded-md w-12 h-12 sm:w-16 sm:h-16 object-cover flex-shrink-0"
                 />
-                <div className="flex-1">
-                  <h4 className="font-medium">{item.name}</h4>
-                  <p className="text-sm text-gray-600">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-sm sm:text-base truncate">{item.name}</h4>
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {formatPrice(item.price)} × {item.quantity}
                   </p>
                 </div>
-                <span className="font-medium">
+                <span className="font-medium text-sm sm:text-base flex-shrink-0">
                   {formatPrice(item.price * item.quantity)}
                 </span>
               </div>
@@ -141,20 +141,20 @@ export function CheckoutForm() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="John" />
+                  <Label htmlFor="firstName" className="text-sm">First Name</Label>
+                  <Input id="firstName" placeholder="John" className="text-sm" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Doe" />
+                  <Label htmlFor="lastName" className="text-sm">Last Name</Label>
+                  <Input id="lastName" placeholder="Doe" className="text-sm" />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="john.doe@example.com" />
+                <Label htmlFor="email" className="text-sm">Email</Label>
+                <Input id="email" type="email" placeholder="john.doe@example.com" className="text-sm" />
               </div>
             </div>
             
@@ -164,7 +164,7 @@ export function CheckoutForm() {
               onClick={handleCheckout}
               disabled={loading}
               size="lg"
-              className="w-full"
+              className="w-full text-sm sm:text-base"
             >
               {loading ? 'Processing...' : `Pay ${formatPrice(total)} with Stripe`}
             </Button>
