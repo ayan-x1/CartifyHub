@@ -40,7 +40,12 @@ export function CheckoutForm() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/create-checkout-session', {
+      // Use absolute URL for deployed site
+      const apiUrl = window.location.hostname === 'localhost' 
+        ? '/api/create-checkout-session'
+        : 'https://cartifyhub.onrender.com/api/create-checkout-session';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items }),

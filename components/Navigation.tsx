@@ -84,14 +84,26 @@ export function Navigation() {
             )}
           </div>
           {/* Mobile menu */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCartOpen(true)}
+              className="relative"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {itemCount}
+              </span>
+            </Button>
+            
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Open menu">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-sm">
+              <SheetContent side="right" className="w-full sm:max-w-sm overflow-y-auto">
                 <SheetTitle className="sr-only">Main menu</SheetTitle>
                 <div className="space-y-4 mt-4">
                   <div className="relative">
@@ -110,24 +122,30 @@ export function Navigation() {
                             Dashboard
                           </Button>
                         </Link>
-                        <Button
-                          variant="ghost"
-                          onClick={() => setCartOpen(true)}
-                          className="w-full justify-start relative"
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          Cart
-                          <span className="absolute right-4 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {itemCount}
-                          </span>
-                        </Button>
-                        <UserButton 
-                          appearance={{
-                            elements: {
-                              avatarBox: "h-8 w-8"
-                            }
-                          }}
-                        />
+                        <div className="flex flex-col space-y-4">
+                          <Button
+                            variant="ghost"
+                            onClick={() => setCartOpen(true)}
+                            className="w-full justify-start relative"
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Cart
+                            <span className="absolute right-4 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                              {itemCount}
+                            </span>
+                          </Button>
+                          
+                          <div className="flex items-center px-2 py-2">
+                            <span className="text-sm mr-2">Account:</span>
+                            <UserButton 
+                              appearance={{
+                                elements: {
+                                  avatarBox: "h-8 w-8"
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
                       </>
                     )}
                     {isLoaded && !user && (

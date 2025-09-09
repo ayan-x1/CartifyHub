@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Get the base URL from the request headers or environment
+    // Get the base URL from the environment or use the deployed URL
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                   `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+                   'https://cartifyhub.onrender.com';
 
     // Calculate totals
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);

@@ -30,13 +30,13 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg">
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Shopping Cart ({items.length})</SheetTitle>
         </SheetHeader>
         
         <div className="flex flex-col h-full">
-          <div className="flex-1 overflow-auto py-6 space-y-4">
+          <div className="flex-1 overflow-y-auto py-6 space-y-4 max-h-[60vh] md:max-h-[70vh]">
             {items.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 mb-4">Your cart is empty</p>
@@ -44,7 +44,7 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
               </div>
             ) : (
               items.map((item) => (
-                <div key={item.productId} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
+                <div key={item.productId} className="flex items-center space-x-2 sm:space-x-4 bg-gray-50 p-2 sm:p-4 rounded-lg">
                   <Image
                     src={item.image}
                     alt={item.name}
@@ -56,7 +56,7 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
                     <h4 className="font-medium text-sm truncate">{item.name}</h4>
                     <p className="text-sm text-gray-500">{formatPrice(item.price)}</p>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
                     <Button
                       variant="outline"
                       size="icon"
@@ -110,7 +110,7 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3 pb-4">
                 <Link href="/checkout" onClick={onClose}>
                   <Button className="w-full" size="lg">
                     Checkout
@@ -119,7 +119,7 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full"
+                  className="w-full py-2 mt-2"
                   onClick={clearCart}
                 >
                   Clear Cart
