@@ -30,13 +30,13 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Shopping Cart ({items.length})</SheetTitle>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto p-4 sm:p-6">
+        <SheetHeader className="pb-4">
+          <SheetTitle className="text-xl font-bold">Shopping Cart ({items.length})</SheetTitle>
         </SheetHeader>
         
         <div className="flex flex-col h-full">
-          <div className="flex-1 overflow-y-auto py-6 space-y-4 max-h-[60vh] md:max-h-[70vh]">
+          <div className="flex-1 overflow-y-auto py-4 space-y-3 max-h-[60vh] md:max-h-[70vh]">
             {items.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 mb-4">Your cart is empty</p>
@@ -44,32 +44,35 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
               </div>
             ) : (
               items.map((item) => (
-                <div key={item.productId} className="flex items-center space-x-2 sm:space-x-4 bg-gray-50 p-2 sm:p-4 rounded-lg">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={64}
-                    height={64}
-                    className="rounded-md"
-                  />
-                  <div className="flex-1 min-w-0">
+                <div key={item.productId} className="flex items-center space-x-2 sm:space-x-4 bg-gray-50 p-3 rounded-lg shadow-sm">
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      sizes="(max-width: 768px) 64px, 64px"
+                      className="rounded-md object-cover"
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 px-1">
                     <h4 className="font-medium text-sm truncate">{item.name}</h4>
-                    <p className="text-sm text-gray-500">{formatPrice(item.price)}</p>
+                    <p className="text-sm text-gray-500 font-medium">{formatPrice(item.price)}</p>
                   </div>
                   <div className="flex items-center space-x-1 sm:space-x-2">
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7 rounded-full"
                       onClick={() => updateQuantity(item.productId, Math.max(0, item.quantity - 1))}
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center text-sm">{item.quantity}</span>
+                    <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-7 w-7 rounded-full"
                       onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                     >
                       <Plus className="h-3 w-3" />
@@ -78,7 +81,7 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-7 w-7 rounded-full ml-1"
                     onClick={() => removeItem(item.productId)}
                   >
                     <X className="h-3 w-3" />
@@ -110,16 +113,16 @@ export function CartSidebar({ open, onClose }: CartSidebarProps) {
                 </div>
               </div>
               
-              <div className="space-y-3 pb-4">
-                <Link href="/checkout" onClick={onClose}>
-                  <Button className="w-full" size="lg">
+              <div className="space-y-3 pb-6">
+                <Link href="/checkout" onClick={onClose} className="block w-full">
+                  <Button className="w-full py-6" size="lg">
                     Checkout
                   </Button>
                 </Link>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="w-full py-2 mt-2"
+                  size="lg"
+                  className="w-full py-5 mt-2"
                   onClick={clearCart}
                 >
                   Clear Cart

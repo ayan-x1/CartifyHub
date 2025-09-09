@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Menu } from 'lucide-react';
+import { User, Search, Menu, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -40,6 +40,24 @@ export function Navigation() {
                 Products
               </Button>
             </Link>
+            
+            {/* Cart button for desktop view */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setCartOpen(true)}
+              className="relative"
+              aria-label="Open cart"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Cart
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </Button>
+            
             {isLoaded && user && (
               <>
                 <Link href="/dashboard">
@@ -48,17 +66,7 @@ export function Navigation() {
                     Dashboard
                   </Button>
                 </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCartOpen(true)}
-                  className="relative"
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                </Button>
+
                 <UserButton 
                   appearance={{
                     elements: {
@@ -85,82 +93,89 @@ export function Navigation() {
           </div>
           {/* Mobile menu */}
           <div className="md:hidden flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCartOpen(true)}
-              className="relative"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {itemCount}
-              </span>
-            </Button>
             
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Open menu">
+                <Button variant="ghost" size="icon" aria-label="Open menu" className="rounded-full">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-sm overflow-y-auto">
+              <SheetContent side="right" className="w-full sm:max-w-sm overflow-y-auto p-4 sm:p-6">
                 <SheetTitle className="sr-only">Main menu</SheetTitle>
                 <div className="space-y-4 mt-4">
-                  <div className="relative">
+                  <div className="relative mb-6">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input placeholder="Search products..." className="pl-10" />
                   </div>
                   <div className="flex flex-col space-y-2">
                     <Link href="/products">
-                      <Button variant="outline" className="w-full">Products</Button>
+                      <Button variant="outline" className="w-full justify-start rounded-lg py-6">
+                        <span className="font-medium">Products</span>
+                      </Button>
                     </Link>
+                    
+                    {/* Cart button for mobile view */}
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start rounded-lg py-6 relative"
+                      onClick={() => setCartOpen(true)}
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-3" />
+                      <span className="font-medium">Cart</span>
+                      {itemCount > 0 && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                          {itemCount}
+                        </span>
+                      )}
+                    </Button>
+                    
                     {isLoaded && user && (
                       <>
                         <Link href="/dashboard">
-                          <Button variant="ghost" className="w-full">
-                            <User className="h-4 w-4 mr-2" />
-                            Dashboard
+                          <Button variant="ghost" className="w-full justify-start rounded-lg py-6">
+                            <User className="h-4 w-4 mr-3" />
+                            <span className="font-medium">Dashboard</span>
                           </Button>
                         </Link>
                         <div className="flex flex-col space-y-4">
-                          <Button
-                            variant="ghost"
-                            onClick={() => setCartOpen(true)}
-                            className="w-full justify-start relative"
-                          >
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Cart
-                            <span className="absolute right-4 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                              {itemCount}
-                            </span>
-                          </Button>
+
                           
-                          <div className="flex items-center px-2 py-2">
-                            <span className="text-sm mr-2">Account:</span>
-                            <UserButton 
-                              appearance={{
-                                elements: {
-                                  avatarBox: "h-8 w-8"
-                                }
-                              }}
-                            />
+                          <div className="mt-6 border-t pt-4">
+                            <div className="flex items-center gap-3 px-2 py-3 rounded-lg bg-gray-50 shadow-sm">
+                              <UserButton 
+                                appearance={{
+                                  elements: {
+                                    avatarBox: "h-8 w-8"
+                                  }
+                                }}
+                              />
+                              <div className="flex-1">
+                                <h3 className="text-sm font-medium">My Account</h3>
+                                <p className="text-xs text-gray-500">Manage your profile</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </>
                     )}
                     {isLoaded && !user && (
-                      <>
-                        <Link href="/sign-in">
-                          <Button variant="ghost" className="w-full">
-                            Sign In
-                          </Button>
-                        </Link>
-                        <Link href="/sign-up">
-                          <Button className="w-full">
-                            Sign Up
-                          </Button>
-                        </Link>
-                      </>
+                      <div className="mt-6 border-t pt-4 space-y-3">
+                        <div className="px-2 py-3 rounded-lg bg-gray-50 shadow-sm">
+                          <h3 className="text-sm font-medium mb-2">Account Access</h3>
+                          <div className="flex gap-2">
+                            <Link href="/sign-in">
+                              <Button className="flex-1" variant="default">
+                                Sign In
+                              </Button>
+                            </Link>
+                            <Link href="/sign-up">
+                              <Button className="flex-1" variant="outline">
+                                Sign Up
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
