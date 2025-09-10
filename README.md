@@ -77,7 +77,7 @@ scripts/    → DB seeding, helpers
 
 ## 🚢 Deployment
 
-* Deploy to **Vercel**
+* Deploy to **Render**
 * Use **MongoDB Atlas** in production
 * Configure env variables in Render
 
