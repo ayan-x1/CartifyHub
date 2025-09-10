@@ -79,8 +79,7 @@ scripts/    → DB seeding, helpers
 
 * Deploy to **Vercel**
 * Use **MongoDB Atlas** in production
-* Configure env variables in Vercel
-* Add Stripe webhook: `/api/stripe/webhook`
+* Configure env variables in Render
 
 ---
 
