@@ -4,6 +4,12 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 const isApiRoute = createRouteMatcher(['/api(.*)']);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Bypass Clerk entirely for Stripe webhooks and other unauthenticated callbacks
+  const path = req.nextUrl.pathname;
+  if (path.startsWith('/api/stripe/webhook')) {
+    return;
+  }
+
   if (isAdminRoute(req)) {
     await auth.protect();
   }
