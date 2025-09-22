@@ -4,7 +4,7 @@ import { connectDB } from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
 
-export async function PATCH(request: Request, { params }: { params: { orderId: string } }) {
+export async function PATCH(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -17,8 +17,9 @@ export async function PATCH(request: Request, { params }: { params: { orderId: s
     if (!user?.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-
-    const { orderId } = params;
+    const url = new URL(request.url);
+    const segments = url.pathname.split('/');
+    const orderId = segments[segments.length - 1];
     const body = await request.json();
     const { status, trackingNumber } = body || {};
 
@@ -38,7 +39,7 @@ export async function PATCH(request: Request, { params }: { params: { orderId: s
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { orderId: string } }) {
+export async function DELETE(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -51,8 +52,9 @@ export async function DELETE(_request: Request, { params }: { params: { orderId:
     if (!user?.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-
-    const { orderId } = params;
+    const url = new URL(request.url);
+    const segments = url.pathname.split('/');
+    const orderId = segments[segments.length - 1];
     const deleted = await Order.findByIdAndDelete(orderId);
     if (!deleted) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
