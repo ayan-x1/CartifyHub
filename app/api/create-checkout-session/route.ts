@@ -26,9 +26,14 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Get the base URL from the environment or use the deployed URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                   'https://cartifyhub.onrender.com';
+    // Determine base URL dynamically to avoid localhost leaks in production
+    const originHeader = request.headers.get('origin');
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const derivedOrigin = (forwardedProto && forwardedHost)
+      ? `${forwardedProto}://${forwardedHost}`
+      : originHeader || new URL(request.url).origin;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || derivedOrigin || 'https://cartifyhub.onrender.com';
 
     // Calculate totals
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
@@ -85,7 +90,7 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'payment',
       success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/cart`,
+      cancel_url: `${baseUrl}/checkout`,
       metadata: {
         orderId: order._id.toString(),
       },
