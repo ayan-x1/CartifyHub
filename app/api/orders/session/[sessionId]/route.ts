@@ -3,10 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { connectDB } from '@/lib/mongodb';
 import Order from '@/models/Order';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { sessionId: string } }
-) {
+export async function GET(request: Request) {
   try {
     // Try to get user, but don't require it. In production (especially with dev Clerk keys),
     // strict auth here can fail and block users from seeing their success page.
@@ -19,7 +16,9 @@ export async function GET(
     }
 
     await connectDB();
-    const { sessionId } = params;
+    const url = new URL(request.url);
+    const segments = url.pathname.split('/');
+    const sessionId = segments[segments.length - 1];
     
     // Prefer matching by session only; if userId is present, include it to narrow results
     const query: any = { stripeSessionId: sessionId };
