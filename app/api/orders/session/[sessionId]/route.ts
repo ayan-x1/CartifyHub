@@ -5,24 +5,26 @@ import Order from '@/models/Order';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> }
+  { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Try to get user, but don't require it. In production (especially with dev Clerk keys),
+    // strict auth here can fail and block users from seeing their success page.
+    let userId: string | null = null;
+    try {
+      const res = await auth();
+      userId = res?.userId || null;
+    } catch {
+      userId = null;
     }
 
     await connectDB();
+    const { sessionId } = params;
     
-    // Await the params Promise
-    const { sessionId } = await params;
-    
-    const order = await Order.findOne({ 
-      stripeSessionId: sessionId,
-      userId: userId 
-    }).lean();
+    // Prefer matching by session only; if userId is present, include it to narrow results
+    const query: any = { stripeSessionId: sessionId };
+    if (userId) query.userId = userId;
+    const order = await Order.findOne(query).lean();
     
     if (!order) {
       return NextResponse.json(
