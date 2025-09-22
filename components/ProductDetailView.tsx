@@ -2,16 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw } from 'lucide-react';
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { IProduct } from '@/models/Product';
 import { Types } from 'mongoose';
 import { toast } from 'sonner';
 import { Product3DViewer } from './Product3DViewer';
 import { useUser } from '@clerk/nextjs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface ProductDetailViewProps {
   product: Omit<IProduct, '_id' | 'createdAt' | 'updatedAt'> & {
@@ -31,6 +38,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -64,6 +72,11 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
 
   // Check if product is in wishlist
   useEffect(() => {
+    // Capture current page URL for sharing in client only
+    if (typeof window !== 'undefined') {
+      setShareUrl(window.location.href);
+    }
+
     const checkWishlistStatus = async () => {
       if (!isSignedIn) return;
       
@@ -116,13 +129,54 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0;
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl || '');
+      toast.success('Link copied to clipboard');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `Check out this product on CartifyHub: ${product.name}`,
+          url: shareUrl,
+        });
+      } catch {
+        // user cancelled or share failed; no toast needed
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const openShareWindow = (url: string) => {
+    const w = 600; const h = 500;
+    const y = window.top?.outerHeight ? Math.max(0, (window.top.outerHeight - h) / 2) : 100;
+    const x = window.top?.outerWidth ? Math.max(0, (window.top.outerWidth - w) / 2) : 100;
+    window.open(url, '_blank', `width=${w},height=${h},left=${x},top=${y}`);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Back to products */}
+      <div className="mb-6">
+        <Link href="/products" className="inline-flex">
+          <Button variant="outline" size="sm" className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to products
+          </Button>
+        </Link>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Product Images */}
         <div className="space-y-4">
           {/* Main Image */}
-          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+          <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
             <Image
               src={product.images[selectedImage] || '/placeholder.jpg'}
               alt={product.name}
@@ -138,7 +192,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`aspect-square bg-gray-100 rounded-md overflow-hidden border-2 transition-colors ${
+                  className={`relative aspect-square bg-gray-100 rounded-md overflow-hidden border-2 transition-colors ${
                     selectedImage === index ? 'border-blue-500' : 'border-transparent'
                   }`}
                 >
@@ -267,9 +321,40 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 <Heart className={`h-5 w-5 ${isWishlisted ? 'text-red-500 fill-current' : ''}`} />
               </Button>
               
-              <Button variant="outline" size="lg">
-                <Share2 className="h-5 w-5" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="lg" className="gap-2">
+                    <Share2 className="h-5 w-5" />
+                    Share
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={handleNativeShare} className="cursor-pointer">
+                    Native share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
+                    Copy link
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => openShareWindow(`https://wa.me/?text=${encodeURIComponent(`${product.name} - ${shareUrl}`)}`)}
+                    className="cursor-pointer"
+                  >
+                    WhatsApp
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(product.name)}`)}
+                    className="cursor-pointer"
+                  >
+                    X (Twitter)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`)}
+                    className="cursor-pointer"
+                  >
+                    Facebook
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
