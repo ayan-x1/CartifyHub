@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, Heart, Package, Star, ShoppingBag, User, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@clerk/nextjs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -16,7 +17,22 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchWishlist();
+    let isMounted = true;
+    const load = async () => {
+      if (!isMounted) return;
+      await fetchWishlist();
+    };
+    load();
+    // Refresh wishlist periodically for near real-time updates
+    const interval = setInterval(load, 15000);
+    // Listen for explicit refresh events from elsewhere in the app
+    const onRefresh = () => load();
+    window.addEventListener('user:wishlist:refresh', onRefresh);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('user:wishlist:refresh', onRefresh);
+    };
   }, []);
 
   const fetchWishlist = async () => {
@@ -44,6 +60,8 @@ export default function WishlistPage() {
       });
       setWishlistProducts((prev) => prev.filter((product) => String(product._id) !== String(productId)));
       toast.success('Removed from wishlist');
+      // Ask any listening components to update stats immediately
+      window.dispatchEvent(new CustomEvent('user:wishlist:refresh'));
     } catch (error) {
       toast.error('Failed to remove from wishlist');
     }
@@ -112,16 +130,17 @@ export default function WishlistPage() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="h-12 w-12 sm:h-16 sm:w-16 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-lg sm:text-xl font-bold">
-                  {user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress.charAt(0) || 'U'}
-                </span>
-              </div>
+              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
+                <AvatarImage src={user?.imageUrl || ''} alt={user?.fullName || 'User'} />
+                <AvatarFallback>
+                  {(user?.firstName?.charAt(0) || user?.emailAddresses[0]?.emailAddress.charAt(0) || 'U').toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  My Wishlist
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+                  {user?.fullName || 'My Wishlist'}
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600">Your favorite products and saved items</p>
+                <p className="text-sm sm:text-base text-gray-600 truncate">Your favorite products and saved items</p>
               </div>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-3">
