@@ -34,7 +34,11 @@ export async function POST(request: NextRequest) {
       ? `${forwardedProto}://${forwardedHost}`
       : originHeader || new URL(request.url).origin;
     // Always prefer derived origin; env var only as fallback
-    const baseUrl = derivedOrigin || process.env.NEXT_PUBLIC_BASE_URL || 'https://cartifyhub.onrender.com';
+    let baseUrl = derivedOrigin || process.env.NEXT_PUBLIC_BASE_URL || 'https://cartifyhub.onrender.com';
+    // Guard against accidental localhost in production
+    if (baseUrl.includes('localhost')) {
+      baseUrl = 'https://cartifyhub.onrender.com';
+    }
 
     // Calculate totals
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
