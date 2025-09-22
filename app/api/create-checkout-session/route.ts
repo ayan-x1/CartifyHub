@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
     const derivedOrigin = (forwardedProto && forwardedHost)
       ? `${forwardedProto}://${forwardedHost}`
       : originHeader || new URL(request.url).origin;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || derivedOrigin || 'https://cartifyhub.onrender.com';
+    // Always prefer derived origin; env var only as fallback
+    const baseUrl = derivedOrigin || process.env.NEXT_PUBLIC_BASE_URL || 'https://cartifyhub.onrender.com';
 
     // Calculate totals
     const subtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
