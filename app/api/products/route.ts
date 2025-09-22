@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const search = searchParams.get('search');
+    const hasPagination = searchParams.has('page') || searchParams.has('limit');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
     const skip = (page - 1) * limit;
@@ -26,23 +27,28 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const products = await Product.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await Product.countDocuments(query);
-
-    return NextResponse.json({
-      products,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
+    let products;
+    let total;
+    if (hasPagination) {
+      products = await Product.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+      total = await Product.countDocuments(query);
+      return NextResponse.json({
+        products,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / Math.max(limit, 1))
+        }
+      });
+    } else {
+      products = await Product.find(query).sort({ createdAt: -1 }).lean();
+      return NextResponse.json({ products });
+    }
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
