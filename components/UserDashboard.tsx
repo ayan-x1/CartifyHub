@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Package, ShoppingBag, User, Heart, Settings, LogOut, Trash2, Upload, Camera, Star } from 'lucide-react';
+import { Package, ShoppingBag, User, Heart, Settings, LogOut, Upload, Camera, Star } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -93,8 +93,7 @@ export function UserDashboard() {
     postalCode: '',
     country: '',
   });
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  
 
   useEffect(() => {
     if (user) {
@@ -346,83 +345,7 @@ export function UserDashboard() {
     return publicUrl;
   };
 
-  const deleteOrder = async (orderId: string) => {
-    const orderToDelete = orders.find(order => order._id === orderId);
-    const orderNumber = orderToDelete?._id.slice(-8) || 'Unknown';
-    
-    if (!confirm(`Are you sure you want to delete Order #${orderNumber}?\n\nThis action cannot be undone and will permanently remove this order from your history.`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/orders?orderId=${orderId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (response.ok) {
-        // Remove the order from the local state
-        setOrders(prevOrders => prevOrders.filter(order => order._id !== orderId));
-        console.log('Order deleted successfully');
-        
-        // Show success toast notification
-        toast.success(`Order #${orderNumber} has been deleted successfully! 🗑️`);
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to delete order:', errorData);
-        
-        // Show error toast notification
-        toast.error(`Failed to delete order: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error deleting order:', error);
-      
-      // Show error toast notification
-      toast.error('Error deleting order. Please try again.');
-    }
-  };
-
-  const confirmDeleteOrder = (orderId: string) => {
-    setOrderToDelete(orderId);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleDeleteOrder = async () => {
-    if (!orderToDelete) return;
-
-    const orderToDeleteData = orders.find(order => order._id === orderToDelete);
-    const orderNumber = orderToDeleteData?._id.slice(-8) || 'Unknown';
-
-    try {
-      const response = await fetch(`/api/orders?orderId=${orderToDelete}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (response.ok) {
-        // Remove the order from the local state
-        setOrders(prevOrders => prevOrders.filter(order => order._id !== orderToDelete));
-        console.log('Order deleted successfully');
-        
-        // Show success toast notification
-        toast.success(`Order #${orderNumber} has been deleted successfully! 🗑️`);
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to delete order:', errorData);
-        
-        // Show error toast notification
-        toast.error(`Failed to delete order: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error deleting order:', error);
-      
-      // Show error toast notification
-      toast.error('Error deleting order. Please try again.');
-    } finally {
-      setShowDeleteConfirm(false);
-      setOrderToDelete(null);
-    }
-  };
+  
 
   const handleSignOut = async () => {
     await signOut();
@@ -603,15 +526,7 @@ export function UserDashboard() {
                               <Badge className={`${getStatusColor(order.status)} text-xs`}>
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                               </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => confirmDeleteOrder(order._id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 p-1 sm:p-2"
-                                title="Delete this order"
-                              >
-                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </Button>
+                              
                             </div>
                           </div>
                         </div>
@@ -655,15 +570,7 @@ export function UserDashboard() {
                               <Badge className={`${getStatusColor(order.status)} text-xs`}>
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                               </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => confirmDeleteOrder(order._id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 p-1 sm:p-2"
-                                title="Delete this order"
-                              >
-                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </Button>
+                              
                             </div>
                           </div>
                         </div>
@@ -1051,45 +958,7 @@ export function UserDashboard() {
           </TabsContent>
         </Tabs>
 
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Trash2 className="h-5 w-5 text-red-600" />
-                Delete Order
-              </DialogTitle>
-              <DialogDescription>
-                {orderToDelete && (
-                  <>
-                    Are you sure you want to delete <strong>Order #{orders.find(o => o._id === orderToDelete)?._id.slice(-8)}</strong>?
-                    <br /><br />
-                    This action cannot be undone and will permanently remove this order from your history.
-                  </>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setOrderToDelete(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteOrder}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Order
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        
       </div>
     </div>
   );

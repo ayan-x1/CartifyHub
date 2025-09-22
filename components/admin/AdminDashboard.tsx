@@ -13,11 +13,14 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const load = async () => {
       try {
+        if (!isMounted) return;
         setLoading(true);
-        const res = await fetch('/api/admin/analytics?range=30d');
+        const res = await fetch('/api/admin/analytics?range=30d', { cache: 'no-store' });
         const data = await res.json();
+        if (!isMounted) return;
         setStats({
           revenue: data.revenue || 0,
           orders: data.orders || 0,
@@ -25,14 +28,30 @@ export function AdminDashboard() {
           customers: data.customers || 0,
         });
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
+
+    // Initial load
     load();
+
+    // Poll every 15 seconds for near real-time updates
+    const intervalId = setInterval(load, 15000);
+
+    // Listen for manual refresh events triggered by child components
+    const onRefresh = () => load();
+    window.addEventListener('admin:stats:refresh', onRefresh);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      window.removeEventListener('admin:stats:refresh', onRefresh);
+    };
   }, []);
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  // API returns cents; convert to dollars for display
+  const formatCurrency = (amountInCents: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amountInCents / 100);
   const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num);
   
   return (

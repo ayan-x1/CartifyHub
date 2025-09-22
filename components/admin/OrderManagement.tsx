@@ -14,6 +14,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Search, Eye, Package, Truck, CheckCircle, XCircle, Calendar, User, CreditCard, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 import { IOrder } from '@/models/Order';
 import { Types } from 'mongoose';
 
@@ -67,9 +68,33 @@ export function OrderManagement() {
 
       if (response.ok) {
         fetchOrders(); // Refresh orders
+        // Ask parent dashboard to refresh stats (orders count, revenue)
+        window.dispatchEvent(new CustomEvent('admin:stats:refresh'));
       }
     } catch (error) {
       console.error('Failed to update order status:', error);
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this order?')) return;
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setOrders(prev => prev.filter(o => (o._id as Types.ObjectId).toString() !== orderId));
+        toast.success(`Order #${orderId.slice(-8)} deleted successfully`);
+        // Notify dashboard to refresh KPIs
+        window.dispatchEvent(new CustomEvent('admin:stats:refresh'));
+      }
+      else {
+        const err = await response.json().catch(() => ({ error: 'Failed to delete order' }));
+        toast.error(err.error || 'Failed to delete order');
+      }
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+      toast.error('Failed to delete order');
     }
   };
 
@@ -263,6 +288,14 @@ export function OrderManagement() {
                           Mark Paid
                         </Button>
                       )}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteOrder((order._id as Types.ObjectId).toString())}
+                        className="w-full sm:w-auto text-xs"
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 </div>
