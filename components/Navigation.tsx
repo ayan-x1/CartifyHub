@@ -23,7 +23,7 @@ export function Navigation() {
             CartifyHub
           </Link>
           
-          <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
+          <div className="hidden lg:flex items-center space-x-4 flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input 
@@ -34,7 +34,7 @@ export function Navigation() {
           </div>
 
           {/* Desktop actions */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <Link href="/products">
               <Button variant="ghost" size="sm">
                 Products
@@ -97,7 +97,7 @@ export function Navigation() {
             )}
           </div>
           {/* Mobile menu */}
-          <div className="md:hidden flex items-center space-x-2">
+          <div className="lg:hidden flex items-center space-x-2">
             
             <Sheet>
               <SheetTrigger asChild>
