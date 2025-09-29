@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 
@@ -12,24 +12,35 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB();
-    
-    // Find user in database
-    const user = await User.findOne({ clerkId: userId });
-    
-    if (!user) {
-      // If user doesn't exist in database, create them with default user role
-      const newUser = new User({
-        clerkId: userId,
-        email: '', // Will be updated when user signs in
-        isAdmin: false, // Default to regular user
-      });
-      
-      await newUser.save();
-      
-      return NextResponse.json({ isAdmin: false });
-    }
-    
-    return NextResponse.json({ isAdmin: user.isAdmin });
+
+    // Fetch the latest profile data from Clerk
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(userId);
+    const primaryEmail = clerkUser.emailAddresses?.find((e: any) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
+      || clerkUser.emailAddresses?.[0]?.emailAddress
+      || '';
+    const fullName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.username || '';
+    const imageUrl = clerkUser.imageUrl || '';
+    const phoneNumber = clerkUser.phoneNumbers?.[0]?.phoneNumber || '';
+
+    // Upsert user in our database with Clerk data
+    const updatedUser = await User.findOneAndUpdate(
+      { clerkId: userId },
+      {
+        $set: {
+          email: primaryEmail,
+          name: fullName,
+          avatarUrl: imageUrl,
+          phone: phoneNumber,
+        },
+        $setOnInsert: {
+          isAdmin: false,
+        },
+      },
+      { new: true, upsert: true }
+    );
+
+    return NextResponse.json({ isAdmin: updatedUser.isAdmin });
   } catch (error) {
     console.error('Error checking user role:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
