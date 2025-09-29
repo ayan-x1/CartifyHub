@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { User, Search, Menu, ShoppingCart } from 'lucide-react';
+import { User, Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -40,23 +40,28 @@ export function Navigation() {
                 Products
               </Button>
             </Link>
+            <Link href="/orders">
+              <Button variant="ghost" size="sm">
+                Orders
+              </Button>
+            </Link>
             
             {/* Cart button for desktop view */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setCartOpen(true)}
-              className="relative"
-              aria-label="Open cart"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Cart
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </Button>
+            <Link href="/cart">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="relative"
+                aria-label="Open cart"
+              >
+                Cart
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
             
             {isLoaded && user && (
               <>
@@ -113,21 +118,26 @@ export function Navigation() {
                         <span className="font-medium">Products</span>
                       </Button>
                     </Link>
+                    <Link href="/orders">
+                      <Button variant="outline" className="w-full justify-start rounded-lg py-6">
+                        <span className="font-medium">Orders</span>
+                      </Button>
+                    </Link>
                     
                     {/* Cart button for mobile view */}
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start rounded-lg py-6 relative"
-                      onClick={() => setCartOpen(true)}
-                    >
-                      <ShoppingCart className="h-4 w-4 mr-3" />
-                      <span className="font-medium">Cart</span>
-                      {itemCount > 0 && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                          {itemCount}
-                        </span>
-                      )}
-                    </Button>
+                    <Link href="/cart">
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start rounded-lg py-6 relative"
+                      >
+                        <span className="font-medium">Cart</span>
+                        {itemCount > 0 && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                            {itemCount}
+                          </span>
+                        )}
+                      </Button>
+                    </Link>
                     
                     {isLoaded && user && (
                       <>

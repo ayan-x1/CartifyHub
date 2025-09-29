@@ -74,7 +74,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-[720px] mx-auto">
       <CardHeader>
         <CardTitle>{product ? 'Edit Product' : 'Add New Product'}</CardTitle>
       </CardHeader>
@@ -169,11 +169,11 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
             />
           </div>
 
-          <div className="flex items-center space-x-4 pt-4">
-            <Button type="submit" disabled={loading}>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4">
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
               {loading ? 'Saving...' : (product ? 'Update Product' : 'Create Product')}
             </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
           </div>

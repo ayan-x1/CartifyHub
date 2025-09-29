@@ -14,7 +14,7 @@ export default function ProductsPage() {
               Discover our amazing collection of products with immersive 3D previews and detailed information.
             </p>
           </div>
-          <ProductGrid />
+          <ProductGrid page={1} limit={12} enablePagination />
         </section>
       </main>
       <Footer />

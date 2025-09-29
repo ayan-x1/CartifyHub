@@ -59,7 +59,7 @@ export function ProductManagement() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
+            <DialogContent className="w-[92vw] sm:w-full max-w-xl sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogTitle className="sr-only">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
               </DialogTitle>

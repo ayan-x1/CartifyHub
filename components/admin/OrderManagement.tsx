@@ -13,6 +13,16 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Search, Eye, Package, Truck, CheckCircle, XCircle, Calendar, User, CreditCard, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { IOrder } from '@/models/Order';
@@ -41,6 +51,8 @@ export function OrderManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -77,7 +89,6 @@ export function OrderManagement() {
   };
 
   const deleteOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to permanently delete this order?')) return;
     try {
       const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'DELETE',
@@ -96,6 +107,11 @@ export function OrderManagement() {
       console.error('Failed to delete order:', error);
       toast.error('Failed to delete order');
     }
+  };
+
+  const confirmDelete = (orderId: string) => {
+    setDeleteTargetId(orderId);
+    setDeleteOpen(true);
   };
 
   const openOrderDetails = (order: IOrder) => {
@@ -154,6 +170,7 @@ export function OrderManagement() {
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Order Management</CardTitle>
@@ -291,7 +308,7 @@ export function OrderManagement() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => deleteOrder((order._id as Types.ObjectId).toString())}
+                        onClick={() => confirmDelete((order._id as Types.ObjectId).toString())}
                         className="w-full sm:w-auto text-xs"
                       >
                         Delete
@@ -515,5 +532,29 @@ export function OrderManagement() {
         </DialogContent>
       </Dialog>
     </Card>
+    {/* Delete confirmation */}
+    <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this order?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. The order and its items will be permanently removed.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (deleteTargetId) deleteOrder(deleteTargetId);
+              setDeleteOpen(false);
+              setDeleteTargetId(null);
+            }}
+          >
+            Delete Order
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

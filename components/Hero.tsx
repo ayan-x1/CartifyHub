@@ -2,9 +2,14 @@
 
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import { Hero3D } from './Hero3D';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
+
+// Lazy-load the 3D hero to keep initial bundle small and avoid SSR
+const Hero3D = dynamic(() => import('./Hero3D').then(m => m.Hero3D), {
+  ssr: false,
+});
 
 export function Hero() {
   const [show3D, setShow3D] = useState(true);

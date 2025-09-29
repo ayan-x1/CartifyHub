@@ -20,11 +20,11 @@ export default function RootLayout({
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
     >
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         </head>
-        <body className={inter.className}>
+        <body className={inter.className} suppressHydrationWarning>
           {children}
           <Toaster />
         </body>

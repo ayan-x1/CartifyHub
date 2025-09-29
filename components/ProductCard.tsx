@@ -107,6 +107,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             src={product.images[0] || '/placeholder.jpg'}
             alt={product.name}
             fill
+            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             priority={priority}
           />

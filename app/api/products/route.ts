@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Product from '@/models/Product';
+import type { PipelineStage } from 'mongoose';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,16 +28,41 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    let products;
-    let total;
+    // Use aggregation to deduplicate by slug and paginate unique products
+    const matchStage: PipelineStage[] = Object.keys(query).length ? [{ $match: query }] : [];
+
     if (hasPagination) {
-      products = await Product.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean();
-      total = await Product.countDocuments(query);
-      return NextResponse.json({
+      const aggregation: PipelineStage[] = [
+        ...matchStage,
+        // Stable ordering strictly by creation time via ObjectId
+        { $sort: { _id: 1 as 1 } },
+        {
+          $group: {
+            _id: "$slug",
+            doc: { $first: "$$ROOT" }
+          }
+        },
+        { $replaceRoot: { newRoot: "$doc" } },
+        // Re-sort after grouping for deterministic order
+        { $sort: { _id: 1 as 1 } },
+        {
+          $facet: {
+            data: [
+              { $skip: skip },
+              { $limit: limit }
+            ],
+            totalCount: [
+              { $count: "count" }
+            ]
+          }
+        }
+      ];
+
+      const result = await Product.aggregate(aggregation);
+      const products = (result[0]?.data ?? []) as any[];
+      const total = result[0]?.totalCount?.[0]?.count ?? 0;
+
+      const res = NextResponse.json({
         products,
         pagination: {
           page,
@@ -45,9 +71,27 @@ export async function GET(request: NextRequest) {
           pages: Math.ceil(total / Math.max(limit, 1))
         }
       });
+      // Cache for 30s, allow stale while revalidate for 5 minutes
+      res.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
+      return res;
     } else {
-      products = await Product.find(query).sort({ createdAt: -1 }).lean();
-      return NextResponse.json({ products });
+      const aggregation: PipelineStage[] = [
+        ...matchStage,
+        // Stable ordering strictly by creation time via ObjectId
+        { $sort: { _id: 1 as 1 } },
+        {
+          $group: {
+            _id: "$slug",
+            doc: { $first: "$$ROOT" }
+          }
+        },
+        { $replaceRoot: { newRoot: "$doc" } },
+        { $sort: { _id: 1 as 1 } }
+      ];
+      const products = await Product.aggregate(aggregation);
+      const res = NextResponse.json({ products });
+      res.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
+      return res;
     }
   } catch (error) {
     console.error('Error fetching products:', error);

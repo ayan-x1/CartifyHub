@@ -110,7 +110,7 @@ export default function OrdersPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <Navigation />
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -125,7 +125,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navigation />
       
       <div className="container mx-auto px-4 py-8">
@@ -177,15 +177,10 @@ export default function OrdersPage() {
             {orders.length === 0 ? (
               <Card>
                 <CardContent className="pt-6">
-                  <div className="text-center py-12">
+                  <div className="text-center py-12 min-h-[320px] flex flex-col items-center justify-center">
                     <ShoppingBag className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
                     <p className="text-gray-600 mb-6">Start shopping to see your order history here</p>
-                    <Link href="/products">
-                      <Button>
-                        Browse Products
-                      </Button>
-                    </Link>
                   </div>
                 </CardContent>
               </Card>
