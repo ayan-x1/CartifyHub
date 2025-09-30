@@ -30,10 +30,21 @@ export function GrantAdminAccess({ clerkId, existingUser }: GrantAdminAccessProp
 
       if (response.ok) {
         setIsGranted(true);
-        // Reload the page after a short delay to show the admin dashboard
+        // Verify that the role endpoint now returns isAdmin: true, then redirect
+        try {
+          const check = await fetch('/api/user/role', { cache: 'no-store' });
+          if (check.ok) {
+            const data = await check.json();
+            if (data?.isAdmin) {
+              window.location.href = '/admin';
+              return;
+            }
+          }
+        } catch {}
+        // Fallback: reload to pick up new role if immediate check failed
         setTimeout(() => {
           window.location.reload();
-        }, 2000);
+        }, 1000);
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to grant admin access');

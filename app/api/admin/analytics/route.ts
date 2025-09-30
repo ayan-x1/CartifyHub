@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/mongodb';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import User from '@/models/User';
+import Analytics from '@/models/Analytics';
 
 function getRangeDays(range: string | null): number {
   switch (range) {
@@ -86,14 +87,39 @@ export async function GET(request: NextRequest) {
       { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, revenue: { $sum: '$total' } } },
       { $sort: { _id: 1 } },
     ]);
+    // Orders count by day
+    const ordersByDay = await Order.aggregate([
+      { $match: revenueMatch },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
     // Fill missing days with 0
     const revenueData: Array<{ date: string; revenue: number }> = [];
+    const ordersCountByDate = new Map<string, number>();
+    for (const ob of ordersByDay) {
+      ordersCountByDate.set(ob._id as string, ob.count as number);
+    }
     for (let i = 0; i < days; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i + 1);
       const key = d.toISOString().slice(0, 10);
       const found = revenueByDay.find((r) => r._id === key);
       revenueData.push({ date: key, revenue: found ? found.revenue : 0 });
+      // Persist daily snapshot into Analytics collection (upsert)
+      try {
+        await Analytics.findOneAndUpdate(
+          { date: new Date(key) },
+          {
+            $set: {
+              revenueCents: found ? (found.revenue as number) : 0,
+              ordersCount: ordersCountByDate.get(key) || 0,
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } catch (e) {
+        // Non-fatal; continue returning analytics
+      }
     }
 
     // Top products by quantity sold
@@ -105,6 +131,24 @@ export async function GET(request: NextRequest) {
       { $limit: 10 },
     ]);
     const topProducts = topProductsAgg.map((p) => ({ name: p._id as string, sold: p.sold as number }));
+    // Also store top products for the latest day snapshot
+    try {
+      const latestDay = revenueData[revenueData.length - 1]?.date;
+      if (latestDay) {
+        // Map product names to IDs if possible
+        const productDocs = await Product.find({ name: { $in: topProducts.map((t) => t.name) } }, { _id: 1, name: 1 });
+        const nameToId = new Map(productDocs.map((p) => [p.name, p._id] as const));
+        await Analytics.findOneAndUpdate(
+          { date: new Date(latestDay) },
+          {
+            $set: {
+              topProducts: topProducts.map((t) => ({ productId: nameToId.get(t.name), sold: t.sold })),
+            },
+          },
+          { upsert: true }
+        );
+      }
+    } catch {}
 
     // Category distribution from products
     const categoryAgg = await Product.aggregate([

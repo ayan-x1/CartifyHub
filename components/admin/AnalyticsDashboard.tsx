@@ -1,25 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users, Package } from 'lucide-react';
 
-// Dynamic imports for charts to avoid SSR issues
-const LineChart = dynamic<any>(() => import('recharts').then((mod) => mod.LineChart as any), { ssr: false });
-const Line = dynamic<any>(() => import('recharts').then((mod) => mod.Line as any), { ssr: false });
-const XAxis = dynamic<any>(() => import('recharts').then((mod) => mod.XAxis as any), { ssr: false });
-const YAxis = dynamic<any>(() => import('recharts').then((mod) => mod.YAxis as any), { ssr: false });
-const CartesianGrid = dynamic<any>(() => import('recharts').then((mod) => mod.CartesianGrid as any), { ssr: false });
-const Tooltip = dynamic<any>(() => import('recharts').then((mod) => mod.Tooltip as any), { ssr: false });
-const ResponsiveContainer = dynamic<any>(() => import('recharts').then((mod) => mod.ResponsiveContainer as any), { ssr: false });
-const BarChart = dynamic<any>(() => import('recharts').then((mod) => mod.BarChart as any), { ssr: false });
-const Bar = dynamic<any>(() => import('recharts').then((mod) => mod.Bar as any), { ssr: false });
-const PieChart = dynamic<any>(() => import('recharts').then((mod) => mod.PieChart as any), { ssr: false });
-const Pie = dynamic<any>(() => import('recharts').then((mod) => mod.Pie as any), { ssr: false });
-const Cell = dynamic<any>(() => import('recharts').then((mod) => mod.Cell as any), { ssr: false });
+// Recharts is client-safe; this component is client-only ('use client')
 
 interface AnalyticsData {
   revenue: number;
@@ -37,6 +38,27 @@ interface AnalyticsData {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
+// Measure parent width to avoid zero-width Recharts containers
+type SizeRender = (dims: { width: number; height: number }) => React.ReactNode;
+function AutoSize({ height, children }: { height: number; children: SizeRender }) {
+  const [width, setWidth] = useState(0);
+  const containerRef = useState<HTMLDivElement | null>(null)[0] as any;
+  const setRef = (node: HTMLDivElement | null) => {
+    (AutoSize as any)._node = node;
+    if (!node) return;
+    const resize = () => setWidth(node.clientWidth || 0);
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(node);
+    (AutoSize as any)._ro = ro;
+  };
+  return (
+    <div ref={setRef} className="w-full min-w-0" style={{ height }}>
+      {width > 0 ? children({ width, height }) : null}
+    </div>
+  );
+}
+
 export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState('30d');
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -49,9 +71,32 @@ export function AnalyticsDashboard() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/analytics?range=${timeRange}`);
+      const response = await fetch(`/api/admin/analytics?range=${timeRange}`, { cache: 'no-store' });
       const data = await response.json();
-      setAnalytics(data as AnalyticsData);
+      if (!response.ok) {
+        console.error('Analytics API error:', data?.error || 'Unknown error');
+        setAnalytics(null);
+      } else {
+        const safeData: AnalyticsData = {
+          revenue: Number(data?.revenue) || 0,
+          orders: Number(data?.orders) || 0,
+          customers: Number(data?.customers) || 0,
+          products: Number(data?.products) || 0,
+          revenueChange: Number(data?.revenueChange) || 0,
+          ordersChange: Number(data?.ordersChange) || 0,
+          customersChange: Number(data?.customersChange) || 0,
+          productsChange: Number(data?.productsChange) || 0,
+          revenueData: Array.isArray(data?.revenueData) ? data.revenueData : [],
+          topProducts: Array.isArray(data?.topProducts) ? data.topProducts : [],
+          categoryDistribution: Array.isArray(data?.categoryDistribution) ? data.categoryDistribution : [],
+        };
+        setAnalytics(safeData);
+        // Nudge Recharts to recalc sizes after data arrives
+        requestAnimationFrame(() => {
+          try { window.dispatchEvent(new Event('resize')); } catch {}
+          setTimeout(() => { try { window.dispatchEvent(new Event('resize')); } catch {} }, 50);
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
     } finally {
@@ -63,14 +108,14 @@ export function AnalyticsDashboard() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format((amount || 0) / 100);
   };
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('en-US').format(num);
   };
 
-  if (loading || !analytics) {
+  if (loading) {
     return (
       <div className="space-y-6">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -84,6 +129,36 @@ export function AnalyticsDashboard() {
           </Card>
         ))}
       </div>
+    );
+  }
+
+  // Show helpful message when unauthorized or analytics missing
+  if (!analytics) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Admin Access Required</CardTitle>
+          <CardDescription>
+            You do not have permission to view analytics. Grant yourself admin access to continue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href="/admin/setup"
+              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            >
+              Go to Admin Setup
+            </a>
+            <a
+              href="/"
+              className="inline-flex items-center justify-center rounded-md border px-4 py-2 hover:bg-gray-50"
+            >
+              Return Home
+            </a>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -190,26 +265,28 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             {analytics.revenueData && analytics.revenueData.length > 0 ? (
-              <div className="w-full h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value: unknown) => [formatCurrency(Number(value)), 'Revenue']}
-                      labelFormatter={(label: unknown) => `Date: ${String(label)}`}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <AutoSize height={300}>
+                {({ width, height }) => (
+                  <ResponsiveContainer width={width} height={height}>
+                    <LineChart data={analytics.revenueData} margin={{ top: 8, right: 12, bottom: 8, left: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis width={60} />
+                      <Tooltip 
+                        formatter={(value: unknown) => [formatCurrency(Number(value)), 'Revenue']}
+                        labelFormatter={(label: unknown) => `Date: ${String(label)}`}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </AutoSize>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-gray-500">
                 <p>No revenue data available</p>
@@ -225,18 +302,20 @@ export function AnalyticsDashboard() {
             <CardDescription>Products with highest sales volume</CardDescription>
           </CardHeader>
           <CardContent>
-            {analytics.topProducts && analytics.topProducts.length > 0 ? (
-              <div className="w-full h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analytics.topProducts}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value: unknown) => [value as string | number, 'Units Sold']} />
-                    <Bar dataKey="sold" fill="#10b981" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+          {analytics.topProducts && analytics.topProducts.length > 0 ? (
+              <AutoSize height={300}>
+                {({ width, height }) => (
+                  <ResponsiveContainer width={width} height={height}>
+                    <BarChart data={analytics.topProducts} margin={{ top: 8, right: 12, bottom: 8, left: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value: unknown) => [value as string | number, 'Units Sold']} />
+                      <Bar dataKey="sold" fill="#10b981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </AutoSize>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-gray-500">
                 <p>No product data available</p>
@@ -254,30 +333,32 @@ export function AnalyticsDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="w-full h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={analytics.categoryDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ category, percent }: { category: string; percent: number }) => `${category} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {analytics.categoryDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: unknown) => [value as string | number, 'Products']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <AutoSize height={360}>
+              {({ width, height }) => (
+                <ResponsiveContainer width={width} height={height}>
+                  <PieChart>
+                    <Pie
+                      data={analytics.categoryDistribution || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry: any) => `${entry.category} ${(entry.percent * 100).toFixed(0)}%`}
+                      outerRadius={Math.max(110, Math.min(170, Math.floor(Math.min(width, height) / 2 - 12)))}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {(analytics.categoryDistribution || []).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: unknown) => [value as string | number, 'Products']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </AutoSize>
             
             <div className="space-y-3">
-              {analytics.categoryDistribution.map((category, index) => (
+              {(analytics.categoryDistribution || []).map((category, index) => (
                 <div key={category.category} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div 
